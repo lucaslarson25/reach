@@ -3,67 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>REACH Capstone</title>
-  <!-- Bootstrap CSS -->
-  <link 
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
-    rel="stylesheet">
+  <title>REACH Capstone Project</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-light">
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html">R.E.A.C.H.</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="team.html">Team</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="project.html">Project</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="solution.html">Solution</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="technologies.html">Technologies</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="timeline.html">Timeline</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="documents.html">Documents</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="code.html">Code</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 
-  <div class="container text-center mt-5">
-    <!-- Title -->
-    <h1 class="display-4 fw-bold mb-4">R.E.A.C.H. Capstone Project</h1>
+  <!-- Main Content -->
+  <div class="container mt-4">
+    <!-- Hero Section -->
+    <div class="row">
+      <div class="col-12 text-center">
+        <img src="logo_navyText_whiteBG.svg" alt="REACH Project Logo" class="img-fluid mb-4" style="max-width: 400px;">
+        <h1 class="display-4 fw-bold mb-4">R.E.A.C.H. Capstone Project</h1>
+        <p class="lead mb-4">
+          [Project description will be added here - brief overview of what REACH does and its purpose]
+        </p>
+      </div>
+    </div>
 
-    <!-- Logo Placeholder -->
-    <img src="logo_navyText_whiteBG.svg" alt="Project Logo" class="img-fluid mb-4" style="max-width: 500px;">
-
-    <!-- Description -->
-    <p class="lead">
-      Here's our logo and team.<br>
-      Our website will appear here soon!
-    </p>
-
-    <!-- Team Section -->
-    <div class="mt-5">
-      <h2 class="mb-3">Meet the Team</h2>
-      <div class="row justify-content-center">
-        <div class="col-md-3 col-6 mb-3">
-          <div class="card p-3 shadow-sm">
-            <img src="tj.jpg" class="card-img-top rounded-circle mb-3" alt="Team Member 1">
-            <h5 class="card-title">Taylor Davis</h5>
-            <p class="card-text">tjd352@nau.edu</p>
+    <!-- Project Overview Cards -->
+    <div class="row mb-5">
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">The Problem</h5>
+            <p class="card-text">[Brief description of the problem REACH solves]</p>
+            <a href="project.html" class="btn btn-outline-primary">Learn More</a>
           </div>
         </div>
-        <div class="col-md-3 col-6 mb-3">
-          <div class="card p-3 shadow-sm">
-            <img src="victor.jpg" class="card-img-top rounded-circle mb-3" alt="Team Member 2">
-            <h5 class="card-title">Victor Rodriguez</h5>
-            <p class="card-text">vr527@nau.edu</p>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">Our Solution</h5>
+            <p class="card-text">[Brief description of the REACH solution]</p>
+            <a href="solution.html" class="btn btn-outline-primary">View Solution</a>
           </div>
         </div>
-        <div class="col-md-3 col-6 mb-3">
-            <div class="card p-3 shadow-sm">
-              <img src="clayton.jpg" class="card-img-top rounded-circle mb-3" alt="Team Member 2">
-              <h5 class="card-title">Clayton Ramsey</h5>
-              <p class="card-text">car723@nau.edu</p>
-            </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">Meet the Team</h5>
+            <p class="card-text">Learn about our development team and their roles</p>
+            <a href="team.html" class="btn btn-outline-primary">Meet Team</a>
+          </div>
         </div>
-        <div class="col-md-3 col-6 mb-3">
-            <div class="card p-3 shadow-sm">
-              <img src="lucas.jpg" class="card-img-top rounded-circle mb-3" alt="Team Member 2">
-              <h5 class="card-title">Lucas Larson</h5>
-              <p class="card-text">lwl33@nau.edu</p>
-            </div>
-        </div>
+      </div>
+    </div>
 
+    <!-- Team Preview -->
+    <div class="row">
+      <div class="col-12">
+        <h2 class="text-center mb-4">Development Team</h2>
+        <div class="row justify-content-center">
+          <div class="col-md-3 col-6 mb-3">
+            <div class="card text-center">
+              <img src="tj.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Taylor Davis">
+              <div class="card-body">
+                <h6 class="card-title">Taylor Davis</h6>
+                <p class="card-text small">tjd352@nau.edu</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="card text-center">
+              <img src="victor.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Victor Rodriguez">
+              <div class="card-body">
+                <h6 class="card-title">Victor Rodriguez</h6>
+                <p class="card-text small">vr527@nau.edu</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="card text-center">
+              <img src="clayton.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Clayton Ramsey">
+              <div class="card-body">
+                <h6 class="card-title">Clayton Ramsey</h6>
+                <p class="card-text small">car723@nau.edu</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="card text-center">
+              <img src="lucas.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Lucas Larson">
+              <div class="card-body">
+                <h6 class="card-title">Lucas Larson</h6>
+                <p class="card-text small">lwl33@nau.edu</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-3">
+          <a href="team.html" class="btn btn-primary">View Full Team Details</a>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS Bundle -->
-  <script 
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-  </script>
+  <!-- Footer -->
+  <footer class="bg-dark text-light mt-5 py-4">
+    <div class="container text-center">
+      <p class="mb-0">&copy; 2024 REACH Capstone Project. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="bootstrap.bundle.min.js"></script>
 </body>
 </html>
