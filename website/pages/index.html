@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>REACH Capstone Project</title>
-  <link rel="stylesheet" href="styles.css">
+
+  <!-- Bootstrap CSS (local) -->
+  <link rel="stylesheet" href="../assets/css/bootstrap.min.css" />
+  <!-- Your custom styles -->
+  <link rel="stylesheet" href="../assets/css/styles.css" />
 </head>
 <body>
   <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
       <a class="navbar-brand fw-bold" href="index.html">R.E.A.C.H.</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link active" href="index.html">Home</a>
+            <a class="nav-link active" aria-current="page" href="index.html">Home</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="team.html">Team</a>
@@ -38,7 +43,7 @@
     <!-- Hero Section -->
     <div class="row">
       <div class="col-12 text-center">
-        <img src="logo_navyText_whiteBG.svg" alt="REACH Project Logo" class="img-fluid mb-4" style="max-width: 400px;">
+        <img src="../assets/logo_navyText_whiteBG.svg" alt="REACH Project Logo" class="img-fluid mb-4" style="max-width: 400px;" />
         <h1 class="display-4 fw-bold mb-4">R.E.A.C.H. Capstone Project</h1>
       </div>
     </div>
@@ -50,41 +55,44 @@
         <div class="row justify-content-center">
           <div class="col-md-3 col-6 mb-3">
             <div class="card text-center">
-              <img src="tj.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Taylor Davis">
+              <img src="../assets/tj.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Taylor Davis" />
               <div class="card-body">
                 <h6 class="card-title">Taylor Davis</h6>
                 <p class="card-text small">tjd352@nau.edu</p>
               </div>
             </div>
           </div>
+
           <div class="col-md-3 col-6 mb-3">
             <div class="card text-center">
-              <img src="victor.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Victor Rodriguez">
+              <img src="../assets/victor.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Victor Rodriguez" />
               <div class="card-body">
                 <h6 class="card-title">Victor Rodriguez</h6>
                 <p class="card-text small">vr527@nau.edu</p>
               </div>
             </div>
           </div>
+
           <div class="col-md-3 col-6 mb-3">
             <div class="card text-center">
-              <img src="clayton.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Clayton Ramsey">
+              <img src="../assets/clayton.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Clayton Ramsey" />
               <div class="card-body">
                 <h6 class="card-title">Clayton Ramsey</h6>
                 <p class="card-text small">car723@nau.edu</p>
               </div>
             </div>
           </div>
+
           <div class="col-md-3 col-6 mb-3">
             <div class="card text-center">
-              <img src="lucas.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Lucas Larson">
+              <img src="../assets/lucas.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Lucas Larson" />
               <div class="card-body">
                 <h6 class="card-title">Lucas Larson</h6>
                 <p class="card-text small">lwl33@nau.edu</p>
               </div>
             </div>
           </div>
-        </div>
+        </div> <!-- /.row -->
       </div>
     </div>
 
@@ -97,12 +105,12 @@
             <h4 class="card-title">[Sponsor Name]</h4>
             <p class="card-text"><strong>Company:</strong> [Company Name]</p>
             <p class="card-text"><strong>Contact:</strong> [Sponsor contact information]</p>
-            <p class="card-text"><strong>Website:</strong> <a href="#" target="_blank">[Sponsor website link]</a></p>
+            <p class="card-text"><strong>Website:</strong> <a href="#" target="_blank" rel="noopener">[Sponsor website link]</a></p>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </div> <!-- /.container -->
 
   <!-- Footer -->
   <footer class="bg-dark text-light mt-5 py-4">
@@ -111,6 +119,6 @@
     </div>
   </footer>
 
+  <!-- Bootstrap JS -->
   <script src="bootstrap.bundle.min.js"></script>
-</body>
 </html>
