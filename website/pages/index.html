@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>REACH Capstone Project</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="80x80" href="../assets/icon_navy_whiteBG.svg">
+
   <!-- Bootstrap CSS (local) -->
   <link rel="stylesheet" href="../assets/css/bootstrap.min.css" />
   <!-- Your custom styles -->
@@ -89,13 +92,13 @@
       <div class="col-lg-7">
         <div class="card h-100">
           <div class="card-body">
-            <h2 class="h4">Project Introduction</h2>
+            <h2 class="h4">Introduction</h2>
             <p>
               Stroke survivors frequently experience upper-limb motor deficits that limit independence in daily tasks such as brushing teeth or reaching for objects.
               <strong>REACH</strong> aims to accelerate assistive technology by developing a modular RL framework that learns task policies in simulation and transfers them to a wearable robotic arm.
             </p>
             <p class="mb-0">
-              Our goals this year are to: (1) model the arm and tasks in MuJoCo, (2) train policies using algorithms such as PPO/SAC on NAU’s Monsoon cluster, and (3) design a reusable abstraction layer so future task schemas and hardware revisions can be integrated rapidly.
+              Our goals this year are to: model the arm and tasks in MuJoCo, train policies using algorithms such as PPO/SAC on NAU’s Monsoon cluster, and design a reusable layer of abstraction so future task and hardware revisions can be more easily integrated.
             </p>
           </div>
         </div>
@@ -109,7 +112,7 @@
               <li><strong>Domain:</strong> Assistive Robotics, Reinforcement Learning, Simulation-to-Real</li>
               <li><strong>Simulation:</strong> MuJoCo (robot + task environments)</li>
               <li><strong>Training:</strong> Monsoon HPC (NAU) with PPO/SAC baselines</li>
-              <li><strong>Focus:</strong> Modular task specs, safe control, fast iteration</li>
+              <li><strong>Focus:</strong> Enabling stroke survivors to perform everyday tasks through adaptive reinforcement learning</li>
             </ul>
           </div>
         </div>
