@@ -4,36 +4,59 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Documents - REACH Capstone Project</title>
+
+   <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="80x80" href="../assets/icon_navy_whiteBG.svg">
+
   <!-- Local styles -->
   <link rel="stylesheet" href="../assets/css/bootstrap.min.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 <body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="index.html">R.E.A.C.H.</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="team.html">Team</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="project.html">Project</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" href="documents.html">Documents</a>
-          </li>
-        </ul>
-      </div>
+ <!-- Navigation -->
+<nav class="navbar navbar-expand-lg" style="background-color: #ffffff;">
+  <div class="container d-flex align-items-center justify-content-between">
+    
+    <!-- Logo on the left -->
+    <a class="navbar-brand" href="index.html">
+      <img src="../assets/logo_navyText_whiteBG.svg" alt="REACH Logo" 
+           style="height: 130px; max-height: 100%;" />
+    </a>
+
+    <!-- Collapsible Nav -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Links on the right -->
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav text-end flex-lg-row flex-column">
+        <li class="nav-item">
+          <a class="nav-link active fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="index.html">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="team.html">Team</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="project.html">Project</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="documents.html">Documents</a>
+        </li>
+      </ul>
     </div>
-  </nav>
+  </div>
+</nav>
+
 
   <!-- Main Content -->
   <div class="container mt-4">
@@ -319,12 +342,16 @@ npm run dev
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="bg-dark text-light mt-5 py-4">
-    <div class="container text-center">
-      <p class="mb-0">&copy; 2024 REACH Capstone Project. All rights reserved.</p>
-    </div>
-  </footer>
+<!-- Footer -->
+<footer class="bg-dark text-light mt-5 py-4">
+  <div class="container text-center">
+    <p class="mb-1">&copy; 2025 REACH Capstone Project. All rights reserved.</p>
+    <p class="mb-0">
+      See our code <a href="https://github.com/lucaslarson25/reach" target="_blank" 
+      rel="noopener noreferrer" style="color: #ffffff; text-decoration: underline;">here</a>.
+    </p>
+  </div>
+</footer>
 
   <!-- Local bootstrap bundle -->
   <script src="../assets/js/bootstrap.bundle.min.js"></script>

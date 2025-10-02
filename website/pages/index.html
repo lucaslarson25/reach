@@ -5,120 +5,213 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>REACH Capstone Project</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="80x80" href="../assets/icon_navy_whiteBG.svg">
+
   <!-- Bootstrap CSS (local) -->
   <link rel="stylesheet" href="../assets/css/bootstrap.min.css" />
   <!-- Your custom styles -->
   <link rel="stylesheet" href="../assets/css/styles.css" />
 </head>
 <body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="index.html">R.E.A.C.H.</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
 
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="index.html">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="team.html">Team</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="project.html">Project</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="documents.html">Documents</a>
-          </li>
-        </ul>
-      </div>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg" style="background-color: #ffffff;">
+  <div class="container d-flex align-items-center justify-content-between">
+    
+    <!-- Logo on the left -->
+    <a class="navbar-brand" href="index.html">
+      <img src="../assets/logo_navyText_whiteBG.svg" alt="REACH Logo" 
+           style="height: 130px; max-height: 100%;" />
+    </a>
+
+    <!-- Collapsible Nav -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Links on the right -->
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav text-end flex-lg-row flex-column">
+        <li class="nav-item">
+          <a class="nav-link active fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="index.html">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="team.html">Team</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="project.html">Project</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" 
+             style="color:#001f4d; font-size: 1.25rem;" 
+             href="documents.html">Documents</a>
+        </li>
+      </ul>
     </div>
-  </nav>
+  </div>
+</nav>
 
   <!-- Main Content -->
   <div class="container mt-4">
-    <!-- Hero Section -->
-    <div class="row">
+
+    <!-- Hero / Branding -->
+    <div class="row align-items-center">
       <div class="col-12 text-center">
-        <img src="../assets/logo_navyText_whiteBG.svg" alt="REACH Project Logo" class="img-fluid mb-4" style="max-width: 400px;" />
-        <h1 class="display-4 fw-bold mb-4">R.E.A.C.H. Capstone Project</h1>
+        <h1 class="display-5 fw-bold mb-2">Welcome to REACH</h1>
+        <p class="lead mb-4">
+          REACH combines simulation, reinforcement learning, and robotics to design assistive technologies that support stroke recovery and improve quality of life.
+        </p>
+        <!-- Quick Links -->
+        <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+          <div class="px-2">
+            <a class="btn btn-outline-white" href="project.html">Project Overview</a>
+          </div>
+          
+          <div class="px-2">
+            <a class="btn btn-outline-white" href="team.html">Meet the Team</a>
+          </div>
+
+          <div class="px-2">
+            <a class="btn btn-outline-white" href="documents.html">Documents & Deliverables</a>
+          </div>
+          
+        </div>
       </div>
     </div>
 
-    <!-- Team Members -->
-    <div class="row mb-5">
-      <div class="col-12">
-        <h2 class="text-center mb-4">Development Team</h2>
-        <div class="row justify-content-center">
-          <div class="col-md-3 col-6 mb-3">
-            <div class="card text-center">
-              <img src="../assets/tj.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Taylor Davis" />
-              <div class="card-body">
-                <h6 class="card-title">Taylor Davis</h6>
-                <p class="card-text small">tjd352@nau.edu</p>
-              </div>
-            </div>
+    <!-- Project Snapshot (concise intro required by rubric) -->
+    <div class="row g-3 mb-5">
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-body">
+            <h2 class="h4">Introduction</h2>
+            <p>
+              Stroke survivors frequently experience upper-limb motor deficits that limit independence in daily tasks such as brushing teeth or reaching for objects.
+              <strong>REACH</strong> aims to accelerate assistive technology by developing a modular RL framework that learns task policies in simulation and transfers them to a wearable robotic arm.
+            </p>
+            <p class="mb-0">
+              Our goals this year are to: model the arm and tasks in MuJoCo, train policies using algorithms such as PPO/SAC on NAU’s Monsoon cluster, and design a reusable layer of abstraction so future task and hardware revisions can be more easily integrated.
+            </p>
           </div>
-
-          <div class="col-md-3 col-6 mb-3">
-            <div class="card text-center">
-              <img src="../assets/victor.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Victor Rodriguez" />
-              <div class="card-body">
-                <h6 class="card-title">Victor Rodriguez</h6>
-                <p class="card-text small">vr527@nau.edu</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-3 col-6 mb-3">
-            <div class="card text-center">
-              <img src="../assets/clayton.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Clayton Ramsey" />
-              <div class="card-body">
-                <h6 class="card-title">Clayton Ramsey</h6>
-                <p class="card-text small">car723@nau.edu</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-3 col-6 mb-3">
-            <div class="card text-center">
-              <img src="../assets/lucas.jpg" class="card-img-top rounded-circle mx-auto mt-3" style="width: 100px; height: 100px; object-fit: cover;" alt="Lucas Larson" />
-              <div class="card-body">
-                <h6 class="card-title">Lucas Larson</h6>
-                <p class="card-text small">lwl33@nau.edu</p>
-              </div>
-            </div>
-          </div>
-        </div> <!-- /.row -->
+        </div>
       </div>
-    </div>
 
-    <!-- Client Information -->
-    <div class="row">
-      <div class="col-12">
-        <h2 class="text-center mb-4">Project Sponsor</h2>
-        <div class="card">
-          <div class="card-body text-center">
-            <h4 class="card-title">[Sponsor Name]</h4>
-            <p class="card-text"><strong>Company:</strong> [Company Name]</p>
-            <p class="card-text"><strong>Contact:</strong> [Sponsor contact information]</p>
-            <p class="card-text"><strong>Website:</strong> <a href="#" target="_blank" rel="noopener">[Sponsor website link]</a></p>
+      <div class="col-lg-5">
+        <div class="card h-100">
+          <div class="card-body">
+            <h2 class="h4">At a Glance</h2>
+            <ul class="mb-0">
+              <li><strong>Domain:</strong> Assistive Robotics, Reinforcement Learning, Simulation-to-Real</li>
+              <li><strong>Simulation:</strong> MuJoCo (robot + task environments)</li>
+              <li><strong>Training:</strong> Monsoon HPC (NAU) with PPO/SAC baselines</li>
+              <li><strong>Focus:</strong> Enabling stroke survivors to perform everyday tasks through adaptive reinforcement learning</li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Team (preview) -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="text-center mb-3">Development Team</h2>
+      </div>
+      <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+          <img src="../assets/tj.jpg" class="card-img-top rounded-circle mx-auto mt-3"
+               style="width: 150px; height: 150px; object-fit: cover;" alt="Taylor Davis" />
+          <div class="card-body">
+            <h6 class="card-title mb-1">Taylor Davis</h6>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+          <img src="../assets/victor.jpg" class="card-img-top rounded-circle mx-auto mt-3"
+               style="width: 150px; height: 150px; object-fit: cover;" alt="Victor Rodriguez" />
+          <div class="card-body">
+            <h6 class="card-title mb-1">Victor Rodriguez</h6>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+          <img src="../assets/clayton.jpg" class="card-img-top rounded-circle mx-auto mt-3"
+               style="width: 150px; height: 150px; object-fit: cover;" alt="Clayton Ramsey" />
+          <div class="card-body">
+            <h6 class="card-title mb-1">Clayton Ramsey</h6>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100">
+          <img src="../assets/lucas.jpg" class="card-img-top rounded-circle mx-auto mt-3"
+               style="width: 150px; height: 150px; object-fit: cover;" alt="Lucas Larson" />
+          <div class="card-body">
+            <h6 class="card-title mb-1">Lucas Larson</h6>
+          </div>
+        </div>
+      </div>
+      <div class="container text-center mt-3">
+        <a href="team.html" class="btn btn-outline-white">Full Team Page</a>
+      </div>
+    </div>
+
+    <!-- Sponsor / Advisor -->
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h2 class="h4">Project Sponsors</h2>
+            <p class="mb-1"><strong>Dr. Zach Lerner</strong></p>
+            <p class="mb-1"><strong>Dr. Carlo da&nbsp;Cunha</strong></p>
+            <p class="text-muted mb-2">Biomechatronics Lab — Building 61, Rooms 104/120</p>
+            <p class="text-muted mb-2">Northern Arizona University</p>
+            <p class="mb-2">
+              <a href="#" target="_blank" rel="noopener">https://biomech.nau.edu/</a>
+            </p>
+            <small class="text-muted">Sponsor details posted with permission.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h2 class="h4">Faculty Mentor</h2>
+            <p class="mb-1"><strong>Bailey Hall</strong></p>
+            <p class="text-muted mb-2">Northern Arizona University</p>
+            <p class="text-muted mb-2">MS Computer Science</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spacer -->
+    <div class="my-4"></div>
+
   </div> <!-- /.container -->
 
-  <!-- Footer -->
-  <footer class="bg-dark text-light mt-5 py-4">
-    <div class="container text-center">
-      <p class="mb-0">&copy; 2024 REACH Capstone Project. All rights reserved.</p>
-    </div>
-  </footer>
+<!-- Footer -->
+<footer class="bg-dark text-light mt-5 py-4">
+  <div class="container text-center">
+    <p class="mb-1">&copy; 2025 REACH Capstone Project. All rights reserved.</p>
+    <p class="mb-0">
+      See our code <a href="https://github.com/lucaslarson25/reach" target="_blank" 
+      rel="noopener noreferrer" style="color: #ffffff; text-decoration: underline;">here</a>.
+    </p>
+  </div>
+</footer>
 
-  <!-- Bootstrap JS -->
-  <script src="bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS (local) -->
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
