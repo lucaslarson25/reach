@@ -596,3 +596,17 @@ a:hover {
 .document-item:last-child {
   border-bottom: none;
 }
+
+/* Custom white outline button */
+.btn-outline-white {
+  color: #ffffff;              /* text white */
+  border-color: #ffffff;       /* border white */
+}
+
+.btn-outline-white:hover,
+.btn-outline-white:focus,
+.btn-outline-white:active {
+  color: #000000 !important;   /* text black */
+  background-color: #ffffff !important; /* background white */
+  border-color: #ffffff !important;     /* keep border white */
+}
