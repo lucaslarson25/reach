@@ -369,7 +369,7 @@ a:hover {
   Overrides Bootstrap's default background colors
 */
 .bg-light {
-  background-color: #2d2d2d !important;
+  background-color: #e0e0e0 !important;
 }
 
 .bg-white {
