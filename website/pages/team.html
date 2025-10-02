@@ -12,8 +12,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Page title displayed in browser tab -->
   <title>Team - REACH Capstone Project</title>
-  <!-- Link to custom stylesheet for dark mode and styling -->
-  <link rel="stylesheet" href="styles.css">
+  <!-- Local styles -->
+  <link rel="stylesheet" href="../assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../assets/css/styles.css" />
 </head>
 <body>
   <!-- 
@@ -25,8 +26,8 @@
     <div class="container">
       <!-- Brand logo/name linking to home page -->
       <a class="navbar-brand fw-bold" href="index.html">R.E.A.C.H.</a>
-      <!-- Mobile hamburger menu button (hidden on larger screens) -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <!-- Collapsible navigation menu -->
@@ -88,7 +89,7 @@
               <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
                 <!-- Team member photo with circular styling and fixed dimensions -->
-                <img src="tj.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Taylor Davis">
+                <img src="../assets/tj.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Taylor Davis">
               </div>
               <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
@@ -150,7 +151,7 @@
               <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
                 <!-- Team member photo with circular styling and fixed dimensions -->
-                <img src="victor.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Victor Rodriguez">
+                <img src="../assets/victor.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Victor Rodriguez">
               </div>
               <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
@@ -230,7 +231,7 @@
               <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
                 <!-- Team member photo with circular styling and fixed dimensions -->
-                <img src="clayton.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Clayton Ramsey">
+                <img src="../assets/clayton.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Clayton Ramsey">
               </div>
               <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
@@ -288,7 +289,7 @@
               <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
                 <!-- Team member photo with circular styling and fixed dimensions -->
-                <img src="lucas.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Lucas Larson">
+                <img src="../assets/lucas.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Lucas Larson">
               </div>
               <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
@@ -414,11 +415,7 @@
     </div>
   </footer>
 
-  <!-- 
-    Bootstrap JavaScript Bundle
-    Includes all Bootstrap JavaScript components for interactive features
-    Required for navbar toggling, modals, dropdowns, etc.
-  -->
-  <script src="bootstrap.bundle.min.js"></script>
+  <!-- Local Bootstrap bundle -->
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
