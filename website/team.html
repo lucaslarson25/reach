@@ -1,30 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<!-- 
+  Team Page - REACH Capstone Project
+  This page displays information about the development team members
+  including their roles, responsibilities, and contact information.
+-->
+<html lang="en" data-bs-theme="dark">
 <head>
+  <!-- Character encoding for proper text display -->
   <meta charset="UTF-8">
+  <!-- Responsive viewport meta tag for mobile compatibility -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Page title displayed in browser tab -->
   <title>Team - REACH Capstone Project</title>
+  <!-- Link to custom stylesheet for dark mode and styling -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Navigation -->
+  <!-- 
+    Navigation Bar
+    Bootstrap responsive navigation with dark theme
+    Includes mobile hamburger menu for smaller screens
+  -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
+      <!-- Brand logo/name linking to home page -->
       <a class="navbar-brand fw-bold" href="index.html">R.E.A.C.H.</a>
+      <!-- Mobile hamburger menu button (hidden on larger screens) -->
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
+      <!-- Collapsible navigation menu -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
+          <!-- Home page navigation link -->
           <li class="nav-item">
             <a class="nav-link" href="index.html">Home</a>
           </li>
+          <!-- Current page (Team) - marked as active -->
           <li class="nav-item">
             <a class="nav-link active" href="team.html">Team</a>
           </li>
+          <!-- Project page navigation link -->
           <li class="nav-item">
             <a class="nav-link" href="project.html">Project</a>
           </li>
+          <!-- Documents page navigation link -->
           <li class="nav-item">
             <a class="nav-link" href="documents.html">Documents</a>
           </li>
@@ -33,37 +53,81 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
+  <!-- 
+    Main Content Container
+    Contains all the page content with proper Bootstrap grid layout
+  -->
   <div class="container mt-4">
+    <!-- Page header section -->
     <div class="row">
       <div class="col-12">
+        <!-- Main page title with custom styling -->
         <h1 class="section-header">Project Team</h1>
+        <!-- Subtitle/description for the page -->
         <p class="lead">Meet the development team behind the REACH Capstone project.</p>
       </div>
     </div>
 
-    <!-- Team Members -->
+    <!-- 
+      Team Members Section
+      Grid layout displaying all team member cards
+      Each member has their own card with photo, contact info, and responsibilities
+    -->
     <div class="row mb-5">
+      <!-- 
+        Taylor Davis - Team Member Card
+        First team member in the grid layout
+        Uses Bootstrap grid system for responsive design
+      -->
       <div class="col-lg-6 mb-4">
+        <!-- Team member card with custom styling and full height -->
         <div class="card team-card h-100">
           <div class="card-body">
+            <!-- Internal row layout for photo and content -->
             <div class="row">
+              <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
+                <!-- Team member photo with circular styling and fixed dimensions -->
                 <img src="tj.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Taylor Davis">
               </div>
+              <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
+                <!-- Team member name as card title -->
                 <h4 class="card-title">Taylor Davis</h4>
+                <!-- Email contact information with muted styling -->
                 <p class="text-muted">tjd352@nau.edu</p>
+                <!-- Role placeholder (to be updated with actual role) -->
                 <h6>Role: [To be defined]</h6>
+                <!-- Bio placeholder (to be filled with actual bio) -->
                 <p class="card-text">
                   [Brief bio and responsibilities - to be filled in with actual project roles]
                 </p>
+                <!-- Detailed responsibilities section -->
                 <p class="card-text">
-                  <strong>Responsibilities:</strong>
+                  <!-- Role summary with emphasis -->
+                  <strong>Responsibilities: Team Lead / Coder / Architect</strong>
+                  <!-- Unordered list of specific responsibilities -->
                   <ul>
-                    <li>[Role responsibility 1]</li>
-                    <li>[Role responsibility 2]</li>
-                    <li>[Role responsibility 3]</li>
+                    <!-- Meeting coordination responsibility -->
+                    <li>Meeting Leadership & Coordination: Create and distribute 
+                      structured meeting agendas, send timely reminders, and 
+                      facilitate productive discussions to ensure meetings 
+                      remain focused and efficient.</li>
+                    <!-- External communication responsibility -->
+                    <li>External Communications: Serve as the primary point of 
+                      contact with clients, customers, the faculty mentor, and 
+                      the course coordinator. Ensure clear, professional, and 
+                      consistent communication to align expectations and provide 
+                      updates.</li>
+                    <!-- Leadership and oversight responsibility -->
+                    <li>Leadership & Oversight: Provide strategic direction for 
+                      the project, resolve team conflicts, and maintain 
+                      accountability for deadlines, quality, and 
+                      deliverables.</li>
+                    <!-- Technical contribution responsibility -->
+                    <li>Technical Contribution: Actively contribute to coding
+                      and architectural decisions, balancing leadership with 
+                      hands-on involvement.</li>
                   </ul>
                 </p>
               </div>
@@ -72,26 +136,78 @@
         </div>
       </div>
 
+      <!-- 
+        Victor Rodriguez - Team Member Card
+        Second team member in the grid layout
+        Marine Corps veteran with technical and leadership experience
+      -->
       <div class="col-lg-6 mb-4">
+        <!-- Team member card with custom styling and full height -->
         <div class="card team-card h-100">
           <div class="card-body">
+            <!-- Internal row layout for photo and content -->
             <div class="row">
+              <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
+                <!-- Team member photo with circular styling and fixed dimensions -->
                 <img src="victor.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Victor Rodriguez">
               </div>
+              <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
+                <!-- Team member name as card title -->
                 <h4 class="card-title">Victor Rodriguez</h4>
+                <!-- Email contact information with muted styling -->
                 <p class="text-muted">vr527@nau.edu</p>
-                <h6>Role: [To be defined]</h6>
+                <!-- Role definition with specific responsibilities -->
+                <h6>Role: Coder / Recorder / Architect</h6>
+                <!-- Detailed bio with background information -->
                 <p class="card-text">
-                  [Brief bio and responsibilities - to be filled in with actual project roles]
+                  Victor Rodriguez is a Computer Science post-baccalaureate 
+                  student at Northern Arizona University with a strong 
+                  background in both technology and leadership. A U.S. Marine 
+                  Corps veteran, he has extensive experience leading teams and 
+                  solving complex problems in high-pressure environments. In the 
+                  REACH capstone project, Victor serves as a Coder, Recorder, 
+                  and Architect, where he manages task tracking, documents 
+                  meetings, and contributes to both backend and frontend 
+                  development. His interests include systems programming, 
+                  artificial intelligence, and human-centered technology, with a 
+                  particular focus on building adaptive systems that improve 
+                  quality of life.
                 </p>
+                <!-- Detailed responsibilities section -->
                 <p class="card-text">
+                  <!-- Responsibilities header with emphasis -->
                   <strong>Responsibilities:</strong>
+                  <!-- Unordered list of specific responsibilities -->
                   <ul>
-                    <li>[Role responsibility 1]</li>
-                    <li>[Role responsibility 2]</li>
-                    <li>[Role responsibility 3]</li>
+                    <!-- Task management responsibility -->
+                    <li>Task Management & Tracking: Own the task tracker, 
+                      ensuring all project milestones, mentor deliverables, and 
+                      internal tasks are up-to-date, prioritized, and assigned. 
+                      Provide visibility into project progress for both the team 
+                      and mentor.</li>
+                    <!-- Documentation responsibility -->
+                    <li>Documentation & Record Keeping: Capture and distribute 
+                      comprehensive meeting minutes that detail decisions, 
+                      discussions, action items, and follow-ups. Ensure the team 
+                      has clear records to maintain accountability.</li>
+                    <!-- Coding responsibility -->
+                    <li>Core Coding Contributions: Lead implementation efforts 
+                      across both backend and frontend modules. Collaborate 
+                      closely with peers to integrate features, troubleshoot 
+                      issues, and ensure maintainable, production-ready 
+                      code.</li>
+                    <!-- Architecture responsibility -->
+                    <li>Architectural Oversight & Guidance: Support overall 
+                      system design and review code for compliance with 
+                      architectural standards. Provide technical guidance on 
+                      best practices, design patterns, scalability 
+                      considerations, and system integration strategies.</li>
+                    <!-- Knowledge sharing responsibility -->
+                    <li>Knowledge Sharing: Act as a resource for teammates by 
+                      documenting workflows, explaining architectural choices, 
+                      and ensuring continuity of knowledge across the team.</li>
                   </ul>
                 </p>
               </div>
@@ -100,26 +216,56 @@
         </div>
       </div>
 
+      <!-- 
+        Clayton Ramsey - Team Member Card
+        Third team member in the grid layout
+        Focuses on development support and collaboration
+      -->
       <div class="col-lg-6 mb-4">
+        <!-- Team member card with custom styling and full height -->
         <div class="card team-card h-100">
           <div class="card-body">
+            <!-- Internal row layout for photo and content -->
             <div class="row">
+              <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
+                <!-- Team member photo with circular styling and fixed dimensions -->
                 <img src="clayton.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Clayton Ramsey">
               </div>
+              <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
+                <!-- Team member name as card title -->
                 <h4 class="card-title">Clayton Ramsey</h4>
+                <!-- Email contact information with muted styling -->
                 <p class="text-muted">car723@nau.edu</p>
-                <h6>Role: [To be defined]</h6>
+                <!-- Role definition with specific responsibilities -->
+                <h6>Role: Coder / Architect</h6>
+                <!-- Bio placeholder (to be filled with actual bio) -->
                 <p class="card-text">
                   [Brief bio and responsibilities - to be filled in with actual project roles]
                 </p>
+                <!-- Detailed responsibilities section -->
                 <p class="card-text">
+                  <!-- Responsibilities header with emphasis -->
                   <strong>Responsibilities:</strong>
+                  <!-- Unordered list of specific responsibilities -->
                   <ul>
-                    <li>[Role responsibility 1]</li>
-                    <li>[Role responsibility 2]</li>
-                    <li>[Role responsibility 3]</li>
+                    <!-- Development support responsibility -->
+                    <li>Development Support: Contribute to implementation across 
+                      assigned modules, ensuring adherence to coding standards 
+                      and project requirements.</li>
+                    <!-- Collaboration responsibility -->
+                    <li>Collaboration & Peer Support: Assist teammates with 
+                      GitHub workflows, debugging, and troubleshooting code. 
+                      Provide one-on-one support where needed to maintain 
+                      development efficiency.</li>
+                    <!-- Architecture responsibility -->
+                    <li>Architectural Input: Participate in design discussions 
+                      and contribute to architectural decisions to ensure a 
+                      scalable, maintainable solution.</li>
+                    <!-- Quality assurance responsibility -->
+                    <li>Quality Assurance: Support code reviews and testing 
+                      efforts, helping ensure high-quality deliverables.</li>
                   </ul>
                 </p>
               </div>
@@ -128,26 +274,58 @@
         </div>
       </div>
 
+      <!-- 
+        Lucas Larson - Team Member Card
+        Fourth team member in the grid layout
+        Specializes in version control management and GitHub operations
+      -->
       <div class="col-lg-6 mb-4">
+        <!-- Team member card with custom styling and full height -->
         <div class="card team-card h-100">
           <div class="card-body">
+            <!-- Internal row layout for photo and content -->
             <div class="row">
+              <!-- Photo column - takes up 4/12 columns on medium screens and up -->
               <div class="col-md-4 text-center">
+                <!-- Team member photo with circular styling and fixed dimensions -->
                 <img src="lucas.jpg" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Lucas Larson">
               </div>
+              <!-- Content column - takes up 8/12 columns on medium screens and up -->
               <div class="col-md-8">
+                <!-- Team member name as card title -->
                 <h4 class="card-title">Lucas Larson</h4>
+                <!-- Email contact information with muted styling -->
                 <p class="text-muted">lwl33@nau.edu</p>
-                <h6>Role: [To be defined]</h6>
+                <!-- Role definition with specific responsibilities -->
+                <h6>Role: Coder / Version Control Manager / Architect</h6>
+                <!-- Bio placeholder (to be filled with actual bio) -->
                 <p class="card-text">
                   [Brief bio and responsibilities - to be filled in with actual project roles]
                 </p>
+                <!-- Detailed responsibilities section -->
                 <p class="card-text">
+                  <!-- Responsibilities header with emphasis -->
                   <strong>Responsibilities:</strong>
+                  <!-- Unordered list of specific responsibilities -->
                   <ul>
-                    <li>[Role responsibility 1]</li>
-                    <li>[Role responsibility 2]</li>
-                    <li>[Role responsibility 3]</li>
+                    <!-- Version control responsibility -->
+                    <li>Version Control Management: Oversee all GitHub 
+                      operations, including repository setup, branching 
+                      strategy, pull request reviews, and merge approvals. 
+                      Ensure the team follows best practices in version control 
+                      and maintains a clean commit history.</li>
+                    <!-- Process enforcement responsibility -->
+                    <li>Process Enforcement: Establish guidelines for issue 
+                      tracking, feature branches, and release tagging to 
+                      maintain development discipline.</li>
+                    <!-- Coding and architecture responsibility -->
+                    <li>Coding & Architectural Work: Contribute to system design 
+                      and coding efforts, ensuring architectural consistency and 
+                      maintainability across modules.</li>
+                    <!-- Mentorship responsibility -->
+                    <li>Mentorship on Tools: Provide team training or 
+                      troubleshooting support related to GitHub and CI/CD 
+                      workflows.</li>
                   </ul>
                 </p>
               </div>
@@ -157,38 +335,90 @@
       </div>
     </div>
 
-    <!-- Team Overview -->
+    <!-- 
+      Team Overview Section
+      Provides information about team structure, communication, and processes
+      Includes meeting schedules, decision-making processes, and standards
+    -->
     <div class="row">
       <div class="col-12">
+        <!-- Team overview card with detailed information -->
         <div class="card">
           <div class="card-body">
+            <!-- Section title -->
             <h3 class="card-title">Team Overview</h3>
+            <!-- Detailed team information paragraph -->
             <p class="card-text">
-              [Add information about how the team works together, communication methods, 
-              meeting schedules, etc. This is a good place to mention your team's approach 
-              to collaboration and project management.]
+              Team REACH works collaboratively through a structured approach to 
+              project management and communication. The team meets weekly with 
+              their mentor every Thursday from 4:30–5:30 PM and attends 
+              bi-weekly sponsor meetings every other Tuesday from 2:00–3:30 PM. 
+              In addition, weekly capstone lectures take place on Fridays from 
+              12:45–3:15 PM. Impromptu meetings may also be scheduled with at 
+              least 24-hour notice if urgent issues arise.
+              <br>
+              <br>
+              Communication and coordination are facilitated through a shared 
+              task tracker, GitHub issues, and a version-controlled repository. 
+              Team members provide quick status updates at the start of 
+              meetings, review ongoing tasks, and discuss blockers before 
+              assigning new action items. Meeting agendas and reminders are 
+              prepared in advance by the team lead, and comprehensive minutes 
+              are recorded and distributed within 24 hours to ensure alignment 
+              and accountability. 
+              <br>
+              <br>
+              Decisions are made by consensus whenever possible, or by a ¾ 
+              majority vote if consensus cannot be reached. In cases of 
+              persistent disagreement, issues are escalated to the faculty
+              mentor for resolution.
+              <br>
+              <br>
+              The team emphasizes professional, respectful communication, 
+              maintaining accountability, and adhering to established document 
+              and coding standards (Google Docs, Microsoft Word/PowerPoint, 
+              Draw.io, Lucidchart, GitHub branching conventions).
             </p>
+            <!-- Project sponsor information section -->
             <h5>Project Sponsor Information</h5>
-            <p><strong>Sponsor:</strong> [Sponsor name and company]</p>
+            <!-- First sponsor details -->
+            <p><strong>Sponsor:</strong> Dr. Zach Lerner, Ph.D. <br>
+              Associate Professor, Mechanical Engineering, NAU </p>
+            <!-- Contact information placeholder -->
             <p><strong>Contact:</strong> [Sponsor contact information]</p>
-            <p><strong>Website:</strong> <a href="#" target="_blank">[Sponsor website link]</a></p>
+            <!-- Sponsor website link -->
+            <p><strong>Website:</strong> <a href="https://biomech.nau.edu" target="_blank"> https://biomech.nau.edu</a></p>
             
-            <h5 class="mt-4">Technical Advisor</h5>
-            <p><strong>Advisor:</strong> [Technical advisor name]</p>
-            <p><strong>Contact:</strong> [Advisor contact information]</p>
+            <!-- Second sponsor details -->
+            <p><strong>Sponsor:</strong> Prof. Carlo R. da Cunha, Ph.D. <br>
+              Assistant Professor, Electrical Engineering, NAU</p>
+            <!-- Contact information placeholder -->
+            <p><strong>Contact:</strong> [Sponsor contact information]</p>
+            <!-- Sponsor website link -->
+            <p><strong>Website:</strong> <a href="https://ac.nau.edu/~cc3682" target="_blank"> https://ac.nau.edu/~cc3682</a></p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
+  <!-- 
+    Footer Section
+    Dark themed footer with copyright information
+    Provides consistent branding across all pages
+  -->
   <footer class="bg-dark text-light mt-5 py-4">
     <div class="container text-center">
+      <!-- Copyright notice -->
       <p class="mb-0">&copy; 2024 REACH Capstone Project. All rights reserved.</p>
     </div>
   </footer>
 
+  <!-- 
+    Bootstrap JavaScript Bundle
+    Includes all Bootstrap JavaScript components for interactive features
+    Required for navbar toggling, modals, dropdowns, etc.
+  -->
   <script src="bootstrap.bundle.min.js"></script>
 </body>
 </html>
