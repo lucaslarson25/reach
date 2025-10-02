@@ -1,18 +1,435 @@
-/* Custom CSS for REACH Capstone Website */
+/* 
+  ===================================
+  REACH Capstone Website - Custom CSS
+  ===================================
+  
+  This stylesheet provides custom styling for the REACH Capstone project website.
+  It includes comprehensive dark mode support for Bootstrap 4 components,
+  custom component styling, and responsive design enhancements.
+  
+  Author: REACH Development Team
+  Version: 1.0
+  Last Updated: 2024
+*/
 
-/* Import Bootstrap CSS (we'll need to download this locally) */
+/* Import Bootstrap CSS framework for base styling */
 @import url('bootstrap.min.css');
 
-/* Custom styles */
+/* ===================================
+   DARK MODE FOR BOOTSTRAP 4
+   =================================== */
+/*
+  This section provides comprehensive dark mode styling for Bootstrap 4.
+  Since Bootstrap 4 doesn't have built-in dark mode support, we override
+  the default light theme colors with dark alternatives.
+*/
+
+/* 
+  Base dark mode styles for the entire page
+  Sets the foundation for all dark theme elements
+*/
 body {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
 }
 
+/* 
+  Heading elements styling for dark mode
+  All heading levels get white color for maximum contrast
+*/
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  color: #ffffff;
+}
+
+/* 
+  Text utility classes for dark mode
+  Overrides Bootstrap's default text colors
+*/
+.text-muted {
+  color: #999999 !important;
+}
+
+.text-dark {
+  color: #e0e0e0 !important;
+}
+
+.lead {
+  color: #d0d0d0;
+}
+
+/* 
+  Link styling for dark mode
+  Uses blue accent colors that work well on dark backgrounds
+*/
+a {
+  color: #6ea8fe;
+}
+
+a:hover {
+  color: #9ec5fe;
+}
+
+/* 
+  Card component styling for dark mode
+  Cards are a major component used throughout the site
+*/
+.card {
+  background-color: #2d2d2d;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+.card-header {
+  background-color: #252525;
+  border-bottom-color: #404040;
+  color: #ffffff;
+}
+
+.card-footer {
+  background-color: #252525;
+  border-top-color: #404040;
+}
+
+.card-title {
+  color: #ffffff;
+}
+
+.card-text {
+  color: #d0d0d0;
+}
+
+/* 
+  Navigation bar styling for dark mode
+  Provides consistent dark theme for site navigation
+*/
+.navbar-dark {
+  background-color: #0a1929 !important;
+}
+
+.navbar-light {
+  background-color: #2d2d2d !important;
+}
+
+.navbar-light .navbar-brand,
+.navbar-light .navbar-nav .nav-link {
+  color: #b0c4de !important;
+}
+
+.navbar-light .navbar-nav .nav-link:hover,
+.navbar-light .navbar-nav .nav-link.active {
+  color: #ffffff !important;
+}
+
+/* 
+  Button styling for dark mode
+  Overrides Bootstrap button colors for dark theme
+*/
+.btn-light {
+  background-color: #404040;
+  border-color: #505050;
+  color: #ffffff;
+}
+
+.btn-light:hover {
+  background-color: #505050;
+  border-color: #606060;
+  color: #ffffff;
+}
+
+.btn-outline-light {
+  color: #f8f9fa;
+  border-color: #f8f9fa;
+}
+
+.btn-outline-light:hover {
+  background-color: #f8f9fa;
+  color: #1a1a1a;
+}
+
+/* 
+  Table styling for dark mode
+  Ensures tables are readable and consistent with dark theme
+*/
+.table {
+  color: #e0e0e0;
+  border-color: #404040;
+}
+
+.table thead th {
+  border-bottom-color: #404040;
+  color: #ffffff;
+}
+
+.table td, .table th {
+  border-top-color: #404040;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.075);
+  color: #ffffff;
+}
+
+/* 
+  Form control styling for dark mode
+  Makes form inputs consistent with dark theme
+*/
+.form-control {
+  background-color: #2d2d2d;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+.form-control:focus {
+  background-color: #353535;
+  border-color: #6ea8fe;
+  color: #ffffff;
+}
+
+.form-control::placeholder {
+  color: #999999;
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: #252525;
+  color: #666666;
+}
+
+/* 
+  Input group styling for dark mode
+  Ensures input group addons match the dark theme
+*/
+.input-group-text {
+  background-color: #2d2d2d;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+/* 
+  Modal dialog styling for dark mode
+  Makes modal dialogs consistent with dark theme
+*/
+.modal-content {
+  background-color: #2d2d2d;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+.modal-header {
+  border-bottom-color: #404040;
+}
+
+.modal-footer {
+  border-top-color: #404040;
+}
+
+.close {
+  color: #ffffff;
+  text-shadow: none;
+}
+
+/* 
+  Dropdown menu styling for dark mode
+  Ensures dropdown menus are consistent with dark theme
+*/
+.dropdown-menu {
+  background-color: #2d2d2d;
+  border-color: #404040;
+}
+
+.dropdown-item {
+  color: #e0e0e0;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: #404040;
+  color: #ffffff;
+}
+
+.dropdown-divider {
+  border-top-color: #404040;
+}
+
+/* 
+  Alert component styling for dark mode
+  Makes alerts consistent with dark theme
+*/
+.alert {
+  border-color: #404040;
+}
+
+.alert-light {
+  background-color: #2d2d2d;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+/* 
+  Badge component styling for dark mode
+  Ensures badges are visible on dark backgrounds
+*/
+.badge-light {
+  background-color: #404040;
+  color: #ffffff;
+}
+
+/* 
+  List group styling for dark mode
+  Ensures list groups are consistent with dark theme
+*/
+.list-group-item {
+  background-color: #2d2d2d;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+.list-group-item:hover {
+  background-color: #353535;
+}
+
+.list-group-item.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+/* 
+  Breadcrumb navigation styling for dark mode
+  Makes breadcrumbs consistent with dark theme
+*/
+.breadcrumb {
+  background-color: #2d2d2d;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: #999999;
+}
+
+/* 
+  Pagination component styling for dark mode
+  Ensures pagination is visible and consistent
+*/
+.page-link {
+  background-color: #2d2d2d;
+  border-color: #404040;
+  color: #6ea8fe;
+}
+
+.page-link:hover {
+  background-color: #404040;
+  border-color: #505050;
+  color: #9ec5fe;
+}
+
+.page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.page-item.disabled .page-link {
+  background-color: #252525;
+  border-color: #404040;
+  color: #666666;
+}
+
+/* 
+  Progress bar styling for dark mode
+  Ensures progress bars are visible on dark backgrounds
+*/
+.progress {
+  background-color: #2d2d2d;
+}
+
+/* 
+  Jumbotron component styling for dark mode
+  Makes jumbotrons consistent with dark theme
+*/
+.jumbotron {
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+}
+
+/* 
+  Border utility styling for dark mode
+  Overrides default border colors
+*/
+.border {
+  border-color: #404040 !important;
+}
+
+/* 
+  Background utility classes for dark mode
+  Overrides Bootstrap's default background colors
+*/
+.bg-light {
+  background-color: #2d2d2d !important;
+}
+
+.bg-white {
+  background-color: #1a1a1a !important;
+}
+
+.bg-dark {
+  background-color: #0a0a0a !important;
+}
+
+/* 
+  Text selection styling for dark mode
+  Makes selected text visible and consistent
+*/
+::selection {
+  background-color: #6ea8fe;
+  color: #ffffff;
+}
+
+/* 
+  Scrollbar styling for dark mode (webkit browsers only)
+  Customizes scrollbar appearance to match dark theme
+*/
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* ===================================
+   CUSTOM STYLES FOR REACH WEBSITE
+   =================================== */
+/*
+  This section contains custom styling specific to the REACH website
+  that enhances the Bootstrap components and provides unique design elements.
+*/
+
+/* 
+  Navigation brand styling
+  Customizes the navbar brand appearance
+*/
 .navbar-brand {
   font-size: 1.5rem;
 }
 
+/* 
+  Card hover effects
+  Adds smooth transitions and hover animations to cards
+*/
 .card {
   transition: transform 0.2s ease-in-out;
 }
@@ -21,12 +438,20 @@ body {
   transform: translateY(-2px);
 }
 
+/* 
+  Hero section styling
+  Creates an attractive gradient background for hero sections
+*/
 .hero-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 4rem 0;
 }
 
+/* 
+  Primary outline button styling
+  Customizes the appearance of outline primary buttons
+*/
 .btn-outline-primary {
   border-color: #0d6efd;
   color: #0d6efd;
@@ -37,7 +462,10 @@ body {
   border-color: #0d6efd;
 }
 
-/* Team member cards */
+/* 
+  Team member card styling
+  Special styling for team member cards with enhanced shadows
+*/
 .team-card {
   border: none;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -47,7 +475,10 @@ body {
   border: 3px solid #f8f9fa;
 }
 
-/* Responsive adjustments */
+/* 
+  Responsive design adjustments
+  Optimizes typography and spacing for mobile devices
+*/
 @media (max-width: 768px) {
   .display-4 {
     font-size: 2rem;
@@ -58,24 +489,38 @@ body {
   }
 }
 
-/* Content sections */
+/* 
+  Content section styling
+  Provides consistent spacing for content sections
+*/
 .content-section {
   padding: 3rem 0;
 }
 
+/* 
+  Section header styling
+  Creates distinctive headers with blue underline
+*/
 .section-header {
   border-bottom: 3px solid #0d6efd;
   padding-bottom: 1rem;
   margin-bottom: 2rem;
 }
 
-/* Timeline styles */
+/* 
+  Timeline component styling
+  Creates a visual timeline with dots and connecting lines
+*/
 .timeline-item {
   position: relative;
   padding-left: 2rem;
   margin-bottom: 2rem;
 }
 
+/* 
+  Timeline dot (before pseudo-element)
+  Creates the circular dot for each timeline item
+*/
 .timeline-item::before {
   content: '';
   position: absolute;
@@ -87,6 +532,10 @@ body {
   border-radius: 50%;
 }
 
+/* 
+  Timeline connecting line (after pseudo-element)
+  Creates the vertical line connecting timeline items
+*/
 .timeline-item::after {
   content: '';
   position: absolute;
@@ -97,11 +546,18 @@ body {
   background-color: #dee2e6;
 }
 
+/* 
+  Remove connecting line from last timeline item
+  Prevents line from extending beyond the last item
+*/
 .timeline-item:last-child::after {
   display: none;
 }
 
-/* Placeholder content styling */
+/* 
+  Placeholder content styling
+  Creates styled placeholders for content that will be added later
+*/
 .placeholder {
   background-color: #f8f9fa;
   border: 2px dashed #dee2e6;
@@ -116,17 +572,27 @@ body {
   margin-bottom: 1rem;
 }
 
-/* Technology cards */
+/* 
+  Technology card styling
+  Creates distinctive left border for technology cards
+*/
 .tech-card {
   border-left: 4px solid #0d6efd;
 }
 
-/* Document list styling */
+/* 
+  Document list item styling
+  Creates consistent spacing and borders for document lists
+*/
 .document-item {
   border-bottom: 1px solid #dee2e6;
   padding: 1rem 0;
 }
 
+/* 
+  Remove border from last document item
+  Prevents double border at the end of the list
+*/
 .document-item:last-child {
   border-bottom: none;
 }
