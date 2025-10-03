@@ -610,3 +610,284 @@ a:hover {
   background-color: #ffffff !important; /* background white */
   border-color: #ffffff !important;     /* keep border white */
 }
+
+/* ===================================
+   CYBERPUNK ACCENTS - PROFESSIONAL EDGE
+   =================================== */
+
+/* 
+  Subtle neon accent colors for cyberpunk feel
+  Using cyan, electric blue, and neon green sparingly
+*/
+:root {
+  --cyberpunk-cyan: #00ffff;
+  --cyberpunk-blue: #0080ff;
+  --cyberpunk-green: #00ff80;
+  --cyberpunk-purple: #8000ff;
+  --cyberpunk-glow: rgba(0, 255, 255, 0.3);
+}
+
+/* 
+  Enhanced section headers with subtle neon glow
+  Adds cyberpunk feel while maintaining professionalism
+*/
+.section-header {
+  border-bottom: 3px solid #0d6efd;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyberpunk-cyan), transparent);
+  animation: neon-pulse 3s ease-in-out infinite;
+}
+
+/* 
+  Subtle neon pulse animation for accent elements
+*/
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 5px var(--cyberpunk-glow);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 15px var(--cyberpunk-glow);
+  }
+}
+
+/* 
+  Enhanced card hover effects with subtle glow
+  Adds cyberpunk edge while maintaining elegance
+*/
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 255, 255, 0.1);
+}
+
+/* 
+  Cyberpunk accent for tech cards
+  Adds neon left border with subtle glow
+*/
+.tech-card {
+  border-left: 4px solid var(--cyberpunk-cyan);
+  position: relative;
+}
+
+.tech-card::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--cyberpunk-cyan), var(--cyberpunk-blue));
+  box-shadow: 0 0 10px var(--cyberpunk-glow);
+}
+
+/* 
+  Enhanced team cards with subtle cyberpunk accents
+*/
+.team-card {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.team-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyberpunk-cyan), transparent);
+  transition: left 0.5s ease;
+}
+
+.team-card:hover::before {
+  left: 100%;
+}
+
+/* 
+  Cyberpunk accent for buttons
+  Subtle glow on hover for primary buttons
+*/
+.btn-primary {
+  background: linear-gradient(135deg, #0d6efd, var(--cyberpunk-blue));
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 20px rgba(13, 110, 253, 0.5);
+}
+
+/* 
+  Enhanced outline buttons with cyberpunk glow
+*/
+.btn-outline-primary {
+  border-color: var(--cyberpunk-blue);
+  color: var(--cyberpunk-blue);
+  position: relative;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--cyberpunk-blue);
+  border-color: var(--cyberpunk-blue);
+  box-shadow: 0 0 15px rgba(0, 128, 255, 0.4);
+}
+
+/* 
+  Cyberpunk accent for navigation links
+  Subtle glow on active/hover states
+*/
+.nav-link {
+  color: #001f4d !important; /* Ensure nav links remain visible */
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: #001f4d !important; /* Keep original navy color */
+  text-shadow: 0 0 10px rgba(0, 31, 77, 0.3); /* Subtle navy glow */
+}
+
+/* 
+  Enhanced timeline with cyberpunk dots
+*/
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle, var(--cyberpunk-cyan), var(--cyberpunk-blue));
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--cyberpunk-glow);
+}
+
+/* 
+  Cyberpunk accent for links
+*/
+a {
+  color: #6ea8fe;
+  position: relative;
+}
+
+a:hover {
+  color: var(--cyberpunk-cyan);
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+/* 
+  Subtle cyberpunk background pattern
+  Very subtle grid pattern for depth
+*/
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 
+  Enhanced scrollbar with cyberpunk colors
+*/
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--cyberpunk-cyan), var(--cyberpunk-blue));
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--cyberpunk-blue), var(--cyberpunk-purple));
+}
+
+/* 
+  Cyberpunk accent for form focus states
+*/
+.form-control:focus {
+  background-color: #353535;
+  border-color: var(--cyberpunk-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+/* 
+  Subtle cyberpunk accent for table hover
+*/
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+/* 
+  Professional cyberpunk footer accent
+*/
+footer {
+  position: relative;
+}
+
+footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyberpunk-cyan), transparent);
+}
+
+/* 
+  Responsive adjustments for cyberpunk effects
+*/
+@media (max-width: 768px) {
+  .section-header::after {
+    width: 40px;
+  }
+  
+  .card:hover {
+    box-shadow: 0 4px 15px rgba(0, 255, 255, 0.1);
+  }
+  
+  body::before {
+    background-size: 30px 30px;
+  }
+}
