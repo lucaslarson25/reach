@@ -1,62 +1,37 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Project - REACH Capstone Project</title>
-
-   <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="80x80" href="../assets/icon_navy_whiteBG.svg">
-
-  <!-- Local styles -->
-  <link rel="stylesheet" href="../assets/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="../assets/css/styles.css" />
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <!-- Navigation -->
-<nav class="navbar navbar-expand-lg" style="background-color: #ffffff;">
-  <div class="container d-flex align-items-center justify-content-between">
-    
-    <!-- Logo on the left -->
-    <a class="navbar-brand" href="index.html">
-      <img src="../assets/logo_navyText_whiteBG.svg" alt="REACH Logo" 
-           style="height: 130px; max-height: 100%;" />
-    </a>
-
-    <!-- Collapsible Nav -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <!-- Links on the right -->
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-      <ul class="navbar-nav text-end flex-lg-row flex-column">
-        <li class="nav-item">
-          <a class="nav-link active fw-semibold" 
-             style="color:#001f4d; font-size: 1.25rem;" 
-             href="index.html">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link fw-semibold" 
-             style="color:#001f4d; font-size: 1.25rem;" 
-             href="team.html">Team</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link fw-semibold" 
-             style="color:#001f4d; font-size: 1.25rem;" 
-             href="project.html">Project</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link fw-semibold" 
-             style="color:#001f4d; font-size: 1.25rem;" 
-             href="documents.html">Documents</a>
-        </li>
-      </ul>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html">R.E.A.C.H.</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="team.html">Team</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="project.html">Project</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="documents.html">Documents</a>
+          </li>
+        </ul>
+      </div>
     </div>
-  </div>
-</nav>
-
+  </nav>
 
   <!-- Main Content -->
   <div class="container mt-4">
@@ -101,7 +76,7 @@
             </p>
             <p>
               <strong>Original Project Proposal:</strong> 
-              <a href="https://www.ceias.nau.edu/cs/CS_Capstone/Projects/F25/20.RoboticArm_Lerner.pdf" target="_blank">View the initial concept provided by our sponsor</a>
+              <a href="#" target="_blank">View the initial concept provided by our sponsor</a>
             </p>
           </div>
         </div>
@@ -114,12 +89,11 @@
         <div class="card">
           <div class="card-body">
             <h3>High-Level Requirements</h3>
-            <p>[List and describe the major requirements you've developed for the project]</p>
+            <p>for this project, a few requirements are needed:</p>
             <ul>
-              <li>[Requirement 1]</li>
-              <li>[Requirement 2]</li>
-              <li>[Requirement 3]</li>
-              <li>[Add more as needed]</li>
+              <li>A physical data simulator</li>
+              <li>An RL framework</li>
+              <li>A robotic arm for testing the framework</li>
             </ul>
           </div>
         </div>
@@ -152,15 +126,11 @@
           <div class="card-body">
             <h3>System Architecture</h3>
             <p>
-              [Describe your system architecture and how components work together:
-              - High-level system design
-              - Component interactions
-              - Data flow and processing
-              - Integration points]
+              TBD
             </p>
             <div class="placeholder">
               <h4>Architecture Diagram</h4>
-              <p>[Add system architecture diagram here]</p>
+              <p>TBD</p>
             </div>
           </div>
         </div>
@@ -178,17 +148,17 @@
               <div class="col-md-6">
                 <h5>Core Modules</h5>
                 <ul>
-                  <li>[Module 1 - Description]</li>
-                  <li>[Module 2 - Description]</li>
-                  <li>[Module 3 - Description]</li>
+                  <li>TBD</li>
+                  <li>TBD</li>
+                  <li>TBD</li>
                 </ul>
               </div>
               <div class="col-md-6">
                 <h5>Key Features</h5>
                 <ul>
-                  <li>[Feature 1 - Description]</li>
-                  <li>[Feature 2 - Description]</li>
-                  <li>[Feature 3 - Description]</li>
+                  <li>TBD</li>
+                  <li>TBD</li>
+                  <li>TBD</li>
                 </ul>
               </div>
             </div>
@@ -224,10 +194,10 @@
                   <div class="card-body">
                     <h5 class="card-title">[Framework 1]</h5>
                     <p class="card-text">
-                      <strong>Purpose:</strong> [What this framework does]
+                      <strong>Purpose:</strong> To act and move like a human arm through trial and error.
                     </p>
                     <p class="card-text">
-                      <strong>Usage:</strong> [How it's used in the project]
+                      <strong>Usage:</strong> To help lose with upper limb disabilities.
                     </p>
                   </div>
                 </div>
@@ -244,15 +214,15 @@
               <div class="col-md-4">
                 <h5>Database & Storage</h5>
                 <ul>
-                  <li><strong>[Database Technology]:</strong> [Database selection rationale]</li>
-                  <li><strong>[Storage Solution]:</strong> [What this storage solution provides]</li>
+                  <li><strong>TBD:</strong> TBD</li>
+                  <li><strong>TBD:</strong> TBD</li>
                 </ul>
               </div>
               <div class="col-md-4">
                 <h5>Deployment</h5>
                 <ul>
-                  <li><strong>[Hosting Platform]:</strong> [Why chosen and how used]</li>
-                  <li><strong>[Deployment Method]:</strong> [Deployment approach]</li>
+                  <li><strong>TBD:</strong> TBD</li>
+                  <li><strong>TBD:</strong> TBD</li>
                 </ul>
               </div>
             </div>
@@ -270,47 +240,47 @@
             <div class="row mb-3">
               <div class="col-md-4">
                 <div class="text-center">
-                  <h4 class="text-primary">[Current Phase]</h4>
+                  <h4 class="text-primary">TBD</h4>
                   <p class="text-muted">Current development phase</p>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="text-center">
-                  <h4 class="text-success">[Completion %]</h4>
+                  <h4 class="text-success">TBD</h4>
                   <p class="text-muted">Overall project completion</p>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="text-center">
-                  <h4 class="text-info">[Days Remaining]</h4>
+                  <h4 class="text-info">TBD</h4>
                   <p class="text-muted">Time until project completion</p>
                 </div>
               </div>
             </div>
             <div class="timeline-item">
               <h5>Phase 1: Project Planning & Requirements</h5>
-              <p class="text-muted">[Start Date] - [End Date]</p>
-              <p>[Description of what was accomplished in this phase]</p>
+              <p class="text-muted">TBD</p>
+              <p>TBD</p>
             </div>
             <div class="timeline-item">
               <h5>Phase 2: System Design & Architecture</h5>
-              <p class="text-muted">[Start Date] - [End Date]</p>
-              <p>[Description of what was accomplished in this phase]</p>
+              <p class="text-muted">TBD</p>
+              <p>TBD</p>
             </div>
             <div class="timeline-item">
               <h5>Phase 3: Core Development</h5>
-              <p class="text-muted">[Start Date] - [End Date]</p>
-              <p>[Description of what was accomplished in this phase]</p>
+              <p class="text-muted">TBD</p>
+              <p>TBD</p>
             </div>
             <div class="timeline-item">
               <h5>Phase 4: Testing & Integration</h5>
-              <p class="text-muted">[Start Date] - [End Date]</p>
-              <p>[Description of what was accomplished in this phase]</p>
+              <p class="text-muted">TBD</p>
+              <p>TBD</p>
             </div>
             <div class="timeline-item">
               <h5>Phase 5: Deployment & Documentation</h5>
-              <p class="text-muted">[Start Date] - [End Date]</p>
-              <p>[Description of what was accomplished in this phase]</p>
+              <p class="text-muted">TBD</p>
+              <p>TBD</p>
             </div>
           </div>
         </div>
@@ -327,17 +297,17 @@
               <div class="col-md-6">
                 <h5>Completed Milestones</h5>
                 <ul>
-                  <li><strong>[Date]:</strong> [Milestone description]</li>
-                  <li><strong>[Date]:</strong> [Milestone description]</li>
-                  <li><strong>[Date]:</strong> [Milestone description]</li>
+                  <li><strong>TBD:</strong> TBD</li>
+                  <li><strong>TBD:</strong> TBD</li>
+                  <li><strong>TBD:</strong> TBD</li>
                 </ul>
               </div>
               <div class="col-md-6">
                 <h5>Upcoming Milestones</h5>
                 <ul>
-                  <li><strong>[Date]:</strong> [Milestone description]</li>
-                  <li><strong>[Date]:</strong> [Milestone description]</li>
-                  <li><strong>[Date]:</strong> [Milestone description]</li>
+                  <li><strong>TBD:</strong> TBD</li>
+                  <li><strong>TBD:</strong> TBD</li>
+                  <li><strong>TBD:</strong> TBD</li>
                 </ul>
               </div>
             </div>
@@ -352,10 +322,10 @@
         <div class="card">
           <div class="card-body">
             <h3>Product Screenshots</h3>
-            <p>[Include screenshots of your product walking users through key use cases]</p>
+            <p>TBD</p>
             <div class="placeholder">
               <h4>Screenshot Walkthrough</h4>
-              <p>[Add screenshots showing key pages and functionality]</p>
+              <p>TBD</p>
             </div>
           </div>
         </div>
@@ -364,17 +334,12 @@
   </div>
 
   <!-- Footer -->
-<footer class="bg-dark text-light mt-5 py-4">
-  <div class="container text-center">
-    <p class="mb-1">&copy; 2025 REACH Capstone Project. All rights reserved.</p>
-    <p class="mb-0">
-      See our code <a href="https://github.com/lucaslarson25/reach" target="_blank" 
-      rel="noopener noreferrer" style="color: #ffffff; text-decoration: underline;">here</a>.
-    </p>
-  </div>
-</footer>
+  <footer class="bg-dark text-light mt-5 py-4">
+    <div class="container text-center">
+      <p class="mb-0">&copy; 2026 REACH Capstone Project. All rights reserved.</p>
+    </div>
+  </footer>
 
-  <!-- Local Bootstrap bundle -->
-  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+  <script src="bootstrap.bundle.min.js"></script>
 </body>
 </html>
