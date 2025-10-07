@@ -48,25 +48,40 @@ The REACH Capstone Project is a comprehensive web application developed by a tea
 ```
 reach/
 ├── README.md                 # Project documentation
-├── website/                  # Main website files
+├── PROJECT_STRUCTURE.md      # Detailed structure documentation
+│
+├── website/                  # Project website
 │   ├── index.html           # Homepage
 │   ├── team.html            # Team information page
 │   ├── project.html         # Project details page
 │   ├── documents.html       # Project documents page
-│   ├── styles.css           # Custom CSS with dark mode
-│   ├── bootstrap.min.css    # Bootstrap framework
-│   ├── bootstrap.bundle.min.js # Bootstrap JavaScript
-│   └── images/              # Team photos and assets
-│       ├── tj.jpg
-│       ├── victor.jpg
-│       ├── clayton.jpg
-│       └── lucas.jpg
-└── documentation/            # Project documentation
-    ├── headshots/           # Team headshots
-    ├── logos/              # Project logos and branding
-    ├── teamInventory.docx  # Team inventory document
-    └── teamInventory.pdf   # Team inventory PDF
+│   └── assets/              # Website assets (CSS, images, logos)
+│
+├── documentation/            # Project documentation and deliverables
+│   ├── headshots/           # Team headshots
+│   ├── logos/               # Project logos and branding
+│   └── *.pdf                # Project documents
+│
+├── src/                      # Main source code (Python package)
+│   ├── simulation/          # MuJoCo environments and physics
+│   ├── agents/              # RL agents (PPO, SAC)
+│   ├── vision/              # YOLO object detection
+│   ├── control/             # Control policies and controllers
+│   └── utils/               # Shared utilities
+│
+├── config/                   # Configuration files (YAML)
+├── scripts/                  # Training and evaluation scripts
+├── tests/                    # Unit and integration tests
+├── notebooks/                # Jupyter notebooks for experiments
+├── models/                   # Saved model checkpoints
+├── logs/                     # Training logs
+│
+├── requirements.txt          # Python dependencies
+├── setup.py                  # Package installation
+└── .gitignore                # Git ignore rules
 ```
+
+For detailed information about the codebase structure, see [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md).
 
 ## Features
 
@@ -86,27 +101,72 @@ reach/
 ## Getting Started
 
 ### Prerequisites
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Local web server (optional, for development)
+- **Python 3.9+** for simulation and RL development
+- **MuJoCo** physics engine (version 2.3+)
+- **Modern web browser** for viewing the project website
+- **NAU Monsoon HPC access** for large-scale training (optional)
 
 ### Installation
-1. Clone the repository:
+
+1. **Clone the repository:**
    ```bash
-   git clone [repository-url]
+   git clone https://github.com/lucaslarson25/reach.git
    cd reach
    ```
 
-2. Navigate to the website directory:
+2. **Create virtual environment:**
    ```bash
-   cd website
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. Open `index.html` in your web browser or serve using a local web server
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### Development Setup
-- Ensure all files are in the correct directory structure
-- Bootstrap CSS and JS files should be present in the website directory
-- Team photos should be in the website directory for proper display
+4. **Install project as package (development mode):**
+   ```bash
+   pip install -e .
+   ```
+
+### Quick Start
+
+**View the project website:**
+```bash
+cd website
+open index.html  # or use a local web server
+```
+
+**Test the simulation environment:**
+```bash
+python scripts/visualize.py --env config/default.yaml
+```
+
+**Train an RL agent:**
+```bash
+python scripts/train.py --config config/default.yaml
+```
+
+**Evaluate a trained model:**
+```bash
+python scripts/evaluate.py --model models/final_model.zip --n_episodes 100
+```
+
+### Development on Monsoon HPC
+
+For training on NAU's Monsoon cluster:
+
+```bash
+# Load required modules
+module load python/3.10
+module load cuda/11.8
+
+# Submit training job
+sbatch scripts/slurm_train.sh
+```
+
+See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed workflow information.
 
 ## Team Collaboration
 
