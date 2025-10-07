@@ -1,0 +1,200 @@
+# ============================================================================
+# REACH Project - Default Configuration
+# ============================================================================
+# This is the default configuration file. Copy and modify for experiments.
+# 
+# To create a new experiment config:
+#   cp config/default.yaml config/experiment_name.yaml
+#   # Edit experiment_name.yaml with your settings
+# ============================================================================
+
+# Experiment Settings
+# -------------------
+experiment:
+  name: "default_experiment"  # Experiment name for logging
+  seed: 42                    # Random seed for reproducibility
+  log_dir: "logs/"           # Directory to save logs
+  checkpoint_dir: "models/"  # Directory to save model checkpoints
+
+# Environment Settings
+# --------------------
+environment:
+  name: "ReachingTask"        # Environment class name
+  model_path: "src/simulation/models/arm_v1.xml"  # MuJoCo model file
+  
+  # Task-specific parameters
+  task:
+    max_episode_steps: 1000   # Maximum steps per episode before timeout
+                              # Each step is typically 0.002 seconds in MuJoCo
+                              # 1000 steps = 2 seconds of simulated time
+                              # Increase for harder tasks, decrease for simple ones
+    
+    success_threshold: 0.05   # Distance threshold for success (meters)
+                              # Task succeeds when within 5cm of target
+                              # Tighter threshold = harder task, but more precise
+                              # Looser threshold = easier task, faster learning
+    
+    workspace_bounds:         # 3D box where targets can appear
+                              # Only generate targets the arm can actually reach!
+                              # Units are in meters relative to the base
+      x_min: -0.5  # Left limit (0.5m to the left of base)
+      x_max: 0.5   # Right limit (0.5m to the right)
+      y_min: -0.5  # Forward/back limit
+      y_max: 0.5
+      z_min: 0.5   # Bottom limit (0.5m above ground if base is at z=1.0)
+      z_max: 1.5   # Top limit (1.5m above ground)
+  
+  # Reward function weights
+  # The reward function tells the agent what's "good" and what's "bad"
+  # Total reward = distance_reward + smoothness_penalty + energy_penalty + success_bonus
+  reward:
+    distance_weight: 1.0      # Weight for distance-to-target reward
+                              # Higher = agent cares more about reaching target
+                              # This should usually be the largest weight
+    
+    smoothness_weight: 0.1    # Weight for smoothness penalty
+                              # Penalizes jerky, rapid movements
+                              # Higher = smoother trajectories
+                              # Too high = very slow movements
+    
+    energy_weight: 0.01       # Weight for energy consumption penalty
+                              # Penalizes high joint torques
+                              # Higher = more energy-efficient movements
+                              # Too high = agent barely moves
+    
+    success_bonus: 10.0       # Bonus for completing task
+                              # One-time reward when task succeeds
+                              # Should be significant (10-100x other rewards)
+                              # Gives agent a clear "goal" signal
+
+# Agent Settings (PPO)
+# --------------------
+agent:
+  algorithm: "PPO"            # RL algorithm (PPO or SAC)
+  
+  # PPO-specific hyperparameters
+  # These control HOW the agent learns. Think of them as "learning settings"
+  ppo:
+    learning_rate: 0.0003     # How big of steps to take when learning
+                              # Too high: unstable, learns wrong things
+                              # Too low: learns very slowly
+                              # Good starting values: 0.0003, 0.0001, 0.001
+    
+    n_steps: 2048             # How many steps to collect before updating the policy
+                              # More steps = more stable but slower
+                              # Typical values: 1024, 2048, 4096
+    
+    batch_size: 64            # How many experiences to learn from at once
+                              # Must be smaller than n_steps
+                              # Larger = more stable, but needs more memory
+    
+    n_epochs: 10              # How many times to reuse collected data
+                              # More epochs = learn more from each batch
+                              # Too many = overfitting (memorizing instead of learning)
+    
+    gamma: 0.99               # Discount factor - how much to value future rewards
+                              # 0.0 = only care about immediate rewards
+                              # 1.0 = future rewards are as important as current
+                              # 0.99 is standard (values rewards ~100 steps in future)
+    
+    gae_lambda: 0.95          # Generalized Advantage Estimation parameter
+                              # Balances bias vs variance in advantage calculation
+                              # Higher = lower bias but higher variance
+                              # 0.95 is a good default, rarely needs changing
+    
+    clip_range: 0.2           # PPO clipping parameter - limits how much policy changes
+                              # Prevents destructively large updates
+                              # 0.2 means policy can change by max 20% per update
+                              # This is what makes PPO stable!
+    
+    ent_coef: 0.0             # Entropy coefficient - encourages exploration
+                              # Higher = more random actions (more exploration)
+                              # Lower = more deterministic (more exploitation)
+                              # Start with 0.0, increase to 0.01 if agent gets stuck
+    
+    vf_coef: 0.5              # Value function loss coefficient
+                              # How much to weight value function vs policy loss
+                              # 0.5 is standard, rarely needs tuning
+    
+    max_grad_norm: 0.5        # Gradient clipping - prevents exploding gradients
+                              # Limits how large the update steps can be
+                              # Prevents training from becoming unstable
+  
+  # Policy network architecture
+  policy:
+    type: "MLP"               # Policy type (MLP, CNN, Recurrent)
+    hidden_sizes: [256, 256]  # Hidden layer sizes for MLP
+    activation: "tanh"        # Activation function
+
+# Training Settings
+# -----------------
+# These control the overall training process
+training:
+  total_timesteps: 1000000    # Total environment steps to train for
+                              # 1 million steps is typical for simple tasks
+                              # Complex tasks may need 5-10 million+
+                              # With 4 parallel envs, this is 250k "real" steps
+  
+  eval_freq: 10000            # Evaluate every N steps
+                              # Tests current policy on separate eval env
+                              # Helps track true performance (not just training performance)
+  
+  n_eval_episodes: 10         # Number of episodes for evaluation
+                              # More episodes = more accurate performance estimate
+                              # But takes longer
+  
+  checkpoint_freq: 50000      # Save model checkpoint every N steps
+                              # Allows resuming training if it crashes
+                              # Keeps history of model at different training stages
+  
+  log_freq: 1000              # Log metrics to TensorBoard every N steps
+                              # More frequent = better graphs but larger logs
+  
+  # Parallel environments for faster training
+  n_envs: 4                   # Number of parallel environments
+                              # Runs 4 environments at once to collect data faster
+                              # Set to number of CPU cores available
+                              # More is faster but uses more RAM
+  
+  # Video recording
+  record_video: true          # Record evaluation videos
+                              # Useful to visually see if agent is learning
+                              # But creates large files
+  
+  video_freq: 50000           # Record video every N steps
+                              # Don't record too often (videos are large)
+
+# Vision Settings (if using YOLO)
+# --------------------------------
+vision:
+  enabled: false              # Enable vision-based observations
+  model_path: "yolov8n.pt"    # YOLO model weights
+  confidence_threshold: 0.5   # Detection confidence threshold
+  camera:
+    name: "head_camera"       # Camera name in MuJoCo model
+    width: 640                # Image width
+    height: 480               # Image height
+    render_depth: true        # Include depth information
+
+# Logging Settings
+# ----------------
+logging:
+  tensorboard: true           # Enable TensorBoard logging
+  wandb: false                # Enable Weights & Biases (requires login)
+  wandb_project: "reach"      # W&B project name
+  log_level: "INFO"           # Logging level (DEBUG, INFO, WARNING, ERROR)
+  
+# Evaluation Settings
+# -------------------
+evaluation:
+  deterministic: true         # Use deterministic policy for evaluation
+  render: false               # Render during evaluation
+  save_trajectories: true     # Save evaluation trajectories
+
+# Hardware Settings (for Monsoon HPC)
+# ------------------------------------
+hardware:
+  device: "auto"              # Device to use (auto, cpu, cuda)
+  gpu_id: 0                   # GPU ID if using CUDA
+  n_cpu_threads: 8            # Number of CPU threads for PyTorch
+
