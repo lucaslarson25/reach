@@ -19,7 +19,7 @@
 # These are fundamental packages for numerical operations and array manipulation.
 # Think of these as the "math tools" that everything else builds on.
 #
-# numpy>=1.24.0          # Arrays, matrices, mathematical operations
+numpy==1.26.4            # Arrays, matrices, mathematical operations
 #                        # Example: storing joint angles as arrays [0.5, 1.2, -0.3]
 #
 # scipy>=1.10.0          # Advanced math (optimization, linear algebra, statistics)
@@ -31,7 +31,7 @@
 # It handles gravity, forces, collisions, and realistic motion dynamics.
 # Think of it like a "video game physics engine" but for robotics research.
 #
-# mujoco>=2.3.0          # Core physics engine - simulates arm movement, contacts, forces
+mujoco==3.1.6            # Core physics engine - simulates arm movement, contacts, forces
 #                        # Documentation: https://mujoco.readthedocs.io/
 #
 # dm-control>=1.0.0      # DeepMind's robotics toolkit (optional)
@@ -44,13 +44,14 @@
 # The agent tries actions, gets rewards, and learns which actions are good.
 # Think of it like training a dog with treats - good actions get positive rewards.
 #
-# gymnasium>=0.28.0      # Standard interface for RL environments
+gymnasium>=0.29.0,<1.0.0 # Standard interface for RL environments
 #                        # Defines how our robot "world" communicates with the AI agent
 #                        # Key concepts: observations (what the robot sees), 
 #                        #               actions (what it can do),
 #                        #               rewards (feedback on performance)
 #
-# stable-baselines3>=2.0.0  # Pre-built RL algorithms (PPO, SAC, etc.)
+stable-baselines3==2.3.2
+#                           # Pre-built RL algorithms (PPO, SAC, etc.)
 #                           # These are the "AI brains" that learn to control the arm
 #                           # PPO = Proximal Policy Optimization (our primary algorithm)
 #                           # SAC = Soft Actor-Critic (alternative algorithm)
@@ -64,7 +65,7 @@
 # Neural networks are the "brain" that processes sensor data and decides actions.
 # PyTorch is the tool we use to build and train these neural networks.
 #
-# torch>=2.0.0           # PyTorch - builds neural networks (the AI's "brain")
+torch>=2.3.0           # PyTorch - builds neural networks (the AI's "brain")
 #                        # The policy network takes observations (joint angles, positions)
 #                        # and outputs actions (joint torques/commands)
 #                        # Tutorial: https://pytorch.org/tutorials/
@@ -121,17 +122,20 @@
 # ---------
 # Helper tools for visualization and user feedback during training.
 #
-# tqdm>=4.65.0           # Progress bars for long-running processes
+tqdm==4.66.4             # Progress bars for long-running processes
 #                        # Shows: [████████░░] 80% complete, 2 min remaining
 #                        # Makes waiting for training less painful!
 #
-# matplotlib>=3.7.0      # Creating plots and graphs
+matplotlib==3.9.2      # Creating plots and graphs
 #                        # Visualize: reward curves, trajectories, sensor data
 #                        # Standard Python plotting library
 #
 # seaborn>=0.12.0        # Beautiful statistical plots
 #                        # Built on matplotlib, makes prettier graphs automatically
 #                        # Good for analyzing experimental results
+pygame==2.6.0
+
+pandas==2.2.3
 
 # Development Tools
 # -----------------
@@ -153,7 +157,7 @@
 # ipython>=8.14.0        # Enhanced Python shell
 #                        # Better than regular Python shell: tab completion, syntax highlighting
 #
-# jupyter>=1.0.0         # Jupyter notebooks
+jupyterlab==4.2.5         # Jupyter notebooks
 #                        # Interactive coding environment (mix code, text, plots)
 #                        # Great for experimentation and debugging
 #                        # Start with: jupyter notebook
@@ -190,4 +194,6 @@
 # gradio>=4.0.0          # Quick ML model demos
 #                        # Super easy to create interfaces for models
 #                        # Good for showcasing to sponsors
+moviepy==1.0.3
 
+ffmpeg==1.4

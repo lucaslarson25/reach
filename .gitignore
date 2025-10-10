@@ -19,16 +19,21 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+Include/
 
 # Virtual Environment
 venv/
 env/
 ENV/
 .venv
+etc/
+scripts/
+pyvenv.cfg
 
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb_checkpoints/
+share/
 
 # IDE
 .vscode/
