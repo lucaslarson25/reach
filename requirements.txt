@@ -31,7 +31,7 @@ numpy==1.26.4            # Arrays, matrices, mathematical operations
 # It handles gravity, forces, collisions, and realistic motion dynamics.
 # Think of it like a "video game physics engine" but for robotics research.
 #
-mujoco==3.1.6            # Core physics engine - simulates arm movement, contacts, forces
+mujoco==3.2.0            # Core physics engine - simulates arm movement, contacts, forces
 #                        # Documentation: https://mujoco.readthedocs.io/
 #
 # dm-control>=1.0.0      # DeepMind's robotics toolkit (optional)
