@@ -7,7 +7,7 @@ from stable_baselines3 import PPO
 env = Z1ReachEnv(render_mode="human")
 
 # Load trained PPO model
-model = PPO.load("ppo_reacher", env=env)
+model = PPO.load("ppo_z1_parallel", env=env)
 
 num_episodes = 3
 

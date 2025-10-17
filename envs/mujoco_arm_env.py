@@ -58,7 +58,7 @@ class Z1ReachEnv(gym.Env):
         dist = np.linalg.norm(ee_pos - ball_pos)
 
         reward = -dist
-        terminated = dist < 0.03
+        terminated = dist < 0.005
         truncated = False
 
         return self._get_obs(), reward, terminated, truncated, {}
