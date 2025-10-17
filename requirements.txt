@@ -125,6 +125,7 @@ torch>=2.3.0           # PyTorch - builds neural networks (the AI's "brain")
 tqdm==4.66.4             # Progress bars for long-running processes
 #                        # Shows: [████████░░] 80% complete, 2 min remaining
 #                        # Makes waiting for training less painful!
+rich>=13.5.0
 #
 matplotlib==3.9.2      # Creating plots and graphs
 #                        # Visualize: reward curves, trajectories, sensor data
