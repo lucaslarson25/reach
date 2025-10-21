@@ -19,7 +19,7 @@ for ep in range(num_episodes):
     done = False
     steps = 0
 
-    while not done and steps < 500:  # optional max steps per episode
+    while not done and steps < 5000:  # optional max steps per episode
         action, _ = model.predict(obs, deterministic=True)
         obs, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated

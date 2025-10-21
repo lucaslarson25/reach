@@ -30,7 +30,7 @@ class Z1ReachEnv(gym.Env):
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32)
 
     def _get_obs(self):
-        ee_pos = self.data.site_xpos[-1] if self.model.nsite > 0 else self.data.xpos[-1]
+        ee_pos = self.data.body("link06").xpos
         ball_pos = self.data.body("ball").xpos
         return np.concatenate([self.data.qpos, ee_pos, ball_pos])
 
@@ -46,21 +46,46 @@ class Z1ReachEnv(gym.Env):
         self.data.qpos[:] = self.model.key("home").qpos
         self._set_ball_random_pos()
         mujoco.mj_forward(self.model, self.data)
+
+        # Initialize previous distance for reward shaping
+        ee_pos = self.data.body("link06").xpos
+        ball_pos = self.data.body("ball").xpos
+        self.prev_dist = np.linalg.norm(ee_pos - ball_pos)
+
         return self._get_obs(), {}
 
     def step(self, action):
-        # Simple proportional control for joint angles
-        self.data.ctrl[:] = action
+        # Apply scaled actions to actuators
+        scaled_action = action * self.model.actuator_ctrlrange[:, 1]
+        self.data.ctrl[:] = scaled_action
         mujoco.mj_step(self.model, self.data)
 
-        ee_pos = self.data.xpos[-1]
+        # Compute 3D positions
+        ee_pos = self.data.body("link06").xpos
         ball_pos = self.data.body("ball").xpos
         dist = np.linalg.norm(ee_pos - ball_pos)
 
-        reward = -dist
-        terminated = dist < 0.005
-        truncated = False
+        # Initialize previous distance (for progress reward)
+        if not hasattr(self, "prev_dist"):
+            self.prev_dist = dist
 
+        # Reward components
+        dense_reward = np.exp(-5 * dist)                   # Smooth distance-based reward
+        progress = self.prev_dist - dist                   # Reward for getting closer
+        action_penalty = 0.01 * np.sum(np.square(action))  # Penalize excessive motion
+
+        # Combine components
+        reward = dense_reward + 10.0 * progress - action_penalty
+
+        # Success condition
+        terminated = dist < 0.005
+        if terminated:
+            reward += 5.0  # Bonus for reaching the goal
+
+        # Update previous distance
+        self.prev_dist = dist
+
+        truncated = False
         return self._get_obs(), reward, terminated, truncated, {}
 
     def render(self):
