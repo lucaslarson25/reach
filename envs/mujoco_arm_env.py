@@ -26,17 +26,21 @@ class Z1ReachEnv(gym.Env):
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(n_act,), dtype=np.float32)
 
         # Observation: joint angles + end-effector pos + ball pos
-        n_obs = self.model.nq + 3 + 3
+        n_obs = self.model.nq + self.model.nv + 3 + 3
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32)
 
     def _get_obs(self):
         ee_pos = self.data.body("link06").xpos
         ball_pos = self.data.body("ball").xpos
-        return np.concatenate([self.data.qpos, ee_pos, ball_pos])
+        return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos])
 
     def _set_ball_random_pos(self):
         x = np.random.uniform(0.2, 0.3)
         y = np.random.uniform(0.2, 0.3)
+
+        x *= np.random.choice([1, -1])
+        y *= np.random.choice([1, -1])
+
         z = 0.05
         self.model.body("ball").pos[:] = [x, y, z]
         mujoco.mj_forward(self.model, self.data)
@@ -56,8 +60,9 @@ class Z1ReachEnv(gym.Env):
 
     def step(self, action):
         # Apply scaled actions to actuators
-        scaled_action = action * self.model.actuator_ctrlrange[:, 1]
-        self.data.ctrl[:] = scaled_action
+        low, high = self.model.actuator_ctrlrange.T
+        scaled_action = low + 0.5 * (action + 1.0) * (high - low)
+        self.data.ctrl[:] = 0.5 * self.data.ctrl + 0.5 * scaled_action
         mujoco.mj_step(self.model, self.data)
 
         # Compute 3D positions
@@ -70,7 +75,7 @@ class Z1ReachEnv(gym.Env):
             self.prev_dist = dist
 
         # Reward components
-        dense_reward = np.exp(-5 * dist)                   # Smooth distance-based reward
+        dense_reward = 1.0 / (1.0 + 10 * dist)             # Smooth distance-based reward
         progress = self.prev_dist - dist                   # Reward for getting closer
         action_penalty = 0.01 * np.sum(np.square(action))  # Penalize excessive motion
 
