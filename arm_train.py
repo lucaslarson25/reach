@@ -26,9 +26,11 @@ def main():
     env = SubprocVecEnv([make_env(i) for i in range(num_cpu)])
 
     # === Define PPO model ===
+    policy_kwargs = dict(net_arch=[256, 256])
     model = PPO(
         "MlpPolicy",
         env,
+        policy_kwargs=policy_kwargs,
         verbose=1,
         device="cuda",           # GPU acceleration
         n_steps=2048,            # per environment
