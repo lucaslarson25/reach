@@ -30,7 +30,8 @@ class Z1ReachEnv(gym.Env):
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32)
 
     def _get_obs(self):
-        ee_pos = self.data.body("link06").xpos
+        ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
+        ee_pos = self.data.site_xpos[ee_id]
         ball_pos = self.data.body("ball").xpos
         return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos])
 
@@ -52,7 +53,8 @@ class Z1ReachEnv(gym.Env):
         mujoco.mj_forward(self.model, self.data)
 
         # Initialize previous distance for reward shaping
-        ee_pos = self.data.body("link06").xpos
+        ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
+        ee_pos = self.data.site_xpos[ee_id]
         ball_pos = self.data.body("ball").xpos
         self.prev_dist = np.linalg.norm(ee_pos - ball_pos)
 
@@ -66,7 +68,8 @@ class Z1ReachEnv(gym.Env):
         mujoco.mj_step(self.model, self.data)
 
         # Compute 3D positions
-        ee_pos = self.data.body("link06").xpos
+        ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
+        ee_pos = self.data.site_xpos[ee_id]
         ball_pos = self.data.body("ball").xpos
         dist = np.linalg.norm(ee_pos - ball_pos)
 
@@ -74,16 +77,12 @@ class Z1ReachEnv(gym.Env):
         if not hasattr(self, "prev_dist"):
             self.prev_dist = dist
 
-        # Reward components
-        dense_reward = 1.0 / (1.0 + 10 * dist)             # Smooth distance-based reward
-        progress = self.prev_dist - dist                   # Reward for getting closer
-        action_penalty = 0.01 * np.sum(np.square(action))  # Penalize excessive motion
-
         # Combine components
-        reward = dense_reward + 10.0 * progress - action_penalty
+        reward = -dist
 
         # Success condition
-        terminated = dist < 0.005
+        terminated = dist < 0.05
+        #print(dist)
         if terminated:
             reward += 5.0  # Bonus for reaching the goal
 

@@ -1,5 +1,14 @@
-<mujoco model="floor">
+<mujoco model="checkered_floor">
+  <asset>
+    <!-- Define a checkered texture -->
+    <texture name="checker" type="2d" builtin="checker" width="512" height="512" rgb1="0.8 0.8 0.8" rgb2="0.2 0.2 0.2" mark="none"/>
+    
+    <!-- Define a material using that texture -->
+    <material name="checker_mat" texture="checker" texrepeat="10 10" specular="0.5"/>
+  </asset>
+
   <worldbody>
-    <geom name="floor" type="plane" size="5 5 0.1" rgba="0.8 0.8 0.8 1" contype="1" conaffinity="1"/>
+    <!-- Apply material to the plane -->
+    <geom name="floor" type="plane" size="5 5 0.1" material="checker_mat" contype="1" conaffinity="1"/>
   </worldbody>
 </mujoco>

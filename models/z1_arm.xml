@@ -69,6 +69,7 @@
                   <joint name="joint6" axis="1 0 0" range="-2.79253 2.79253"/>
                   <geom class="visual" mesh="z1_Link06"/>
                   <geom size="0.0325 0.0255" pos="0.0255 0 0" quat="1 0 1 0" class="collision"/>
+                  <site name="eetip" pos="0.050 0 0" size="0.005" rgba="0 1 0 1"/>
                 </body>
               </body>
             </body>
