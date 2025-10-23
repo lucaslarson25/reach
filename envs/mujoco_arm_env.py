@@ -1,9 +1,9 @@
 import gymnasium as gym
 from gymnasium import spaces
+import os
 import numpy as np
 import mujoco
 import mujoco.viewer
-import os
 import time
 
 class Z1ReachEnv(gym.Env):
@@ -85,11 +85,14 @@ class Z1ReachEnv(gym.Env):
             self.prev_dist = dist
 
         # --- Shaping rewards ---
+        # Scale dense/progress reward when near the goal
+        near_goal_scale = np.clip(dist / 0.1, 0.0, 1.0)  # 0 at 0, 1 at 0.1m away
+
         # Dense distance-based reward (closer = higher reward)
-        dense_reward = 1.0 / (1.0 + 10 * dist)
+        dense_reward = (1.0 / ((1.0 + 10 * dist) ** 1.5)) * near_goal_scale
 
         # Reward for progress toward the ball since last step
-        progress = np.clip(self.prev_dist - dist, -0.03, 0.03)
+        progress = np.clip(self.prev_dist - dist, -0.03, 0.03) * near_goal_scale
 
         # Orientation reward (encourages tip to face target)
         xmat = self.data.site_xmat[ee_id].reshape(3, 3)
@@ -103,7 +106,7 @@ class Z1ReachEnv(gym.Env):
         action_penalty = 0.05 * np.sum(np.square(action))
 
         # Combine rewards
-        reward = 3.0 * dense_reward + 2.0 * progress + 0.25 * orientation_reward - action_penalty
+        reward = 3.0 * dense_reward + 1.5 * progress + 0.3 * orientation_reward - action_penalty
 
         # --- Success bonus ---
         success_threshold = 0.05
@@ -111,10 +114,10 @@ class Z1ReachEnv(gym.Env):
         truncated = self.step_count >= max_steps
 
         if terminated:
-            reward += 100.0  # Increased terminal reward for precision
-            print("MADE IT", reward)
+            reward += 500.0  # Strong terminal reward
+            print("OOO")
         elif truncated:
-            print("Episode truncated", reward)
+            print("0")
 
         # Optional: small penalty for hovering too long above ball
         if dist < 0.1 and not terminated:
