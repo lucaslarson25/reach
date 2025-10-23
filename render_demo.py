@@ -8,7 +8,7 @@ import mujoco.viewer
 env = Z1ReachEnv(render_mode="human")
 
 # Load trained PPO model
-model = PPO.load("ppo_z1_parallel", env=env)
+model = PPO.load("ppo_z1_parallel_1m_great", env=env)
 
 num_episodes = 20
 max_episode_duration = 30.0  # seconds
@@ -44,7 +44,7 @@ try:
                 env.viewer.sync()
 
             # Limit framerate to ~60 FPS
-            time.sleep(1/60)
+            time.sleep(1/120)
 
         print(f"Episode {ep + 1} finished in {elapsed_time:.2f}s with total reward {ep_reward:.2f}")
         print("Episode complete")

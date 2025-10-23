@@ -106,7 +106,7 @@ class Z1ReachEnv(gym.Env):
         action_penalty = 0.05 * np.sum(np.square(action))
 
         # Combine rewards
-        reward = 3.0 * dense_reward + 1.5 * progress + 0.3 * orientation_reward - action_penalty
+        reward = 3.0 * dense_reward + 1.5 * progress + 0.45 * orientation_reward - action_penalty
 
         # --- Success bonus ---
         success_threshold = 0.05
@@ -114,10 +114,11 @@ class Z1ReachEnv(gym.Env):
         truncated = self.step_count >= max_steps
 
         if terminated:
-            reward += 500.0  # Strong terminal reward
-            print("OOO")
+            reward += 550.0  # Strong terminal reward
+            #print("OOO")
         elif truncated:
-            print("0")
+            #print("0")
+            pass
 
         # Optional: small penalty for hovering too long above ball
         if dist < 0.1 and not terminated:
@@ -126,7 +127,7 @@ class Z1ReachEnv(gym.Env):
         # Update previous distance
         self.prev_dist = dist
 
-        return self._get_obs(), reward, terminated, truncated, {}
+        return self._get_obs(), reward, terminated, truncated, {"terminated": terminated}
 
     def render(self):
         if self.render_mode == "human":
