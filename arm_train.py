@@ -19,7 +19,7 @@ def make_env(rank):
 
 def main():
     # === Auto-detect CPU cores ===
-    num_cpu = max(1, os.cpu_count() // 2)  # half of available cores for safety
+    num_cpu = max(1, os.cpu_count())  # half of available cores for safety
     print(f"Launching {num_cpu} parallel environments...")
 
     # === Create vectorized environments ===

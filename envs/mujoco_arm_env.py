@@ -17,6 +17,7 @@ class Z1ReachEnv(gym.Env):
         print("Loading model from:", xml_path)
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
+        self.step_count = 0
 
         self.render_mode = render_mode
         self.viewer = None
@@ -32,14 +33,14 @@ class Z1ReachEnv(gym.Env):
     def _get_obs(self):
         ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
         ee_pos = self.data.site_xpos[ee_id]
-        ball_pos = self.data.body("ball").xpos
+        ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+        ball_pos = self.data.xpos[ball_id]
         return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos])
 
     def _set_ball_random_pos(self):
         x = np.random.uniform(0.2, 0.3)
         y = np.random.uniform(0.2, 0.3)
 
-        x *= np.random.choice([1, -1])
         y *= np.random.choice([1, -1])
 
         z = 0.05
@@ -55,8 +56,10 @@ class Z1ReachEnv(gym.Env):
         # Initialize previous distance for reward shaping
         ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
         ee_pos = self.data.site_xpos[ee_id]
-        ball_pos = self.data.body("ball").xpos
+        ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+        ball_pos = self.data.xpos[ball_id]
         self.prev_dist = np.linalg.norm(ee_pos - ball_pos)
+        self.step_count = 0
 
         return self._get_obs(), {}
 
@@ -65,31 +68,61 @@ class Z1ReachEnv(gym.Env):
         low, high = self.model.actuator_ctrlrange.T
         scaled_action = low + 0.5 * (action + 1.0) * (high - low)
         self.data.ctrl[:] = 0.5 * self.data.ctrl + 0.5 * scaled_action
+
         mujoco.mj_step(self.model, self.data)
+        self.step_count += 1
+        max_steps = 1000  # 10 seconds * 100 Hz
 
         # Compute 3D positions
         ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
         ee_pos = self.data.site_xpos[ee_id]
-        ball_pos = self.data.body("ball").xpos
+        ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+        ball_pos = self.data.xpos[ball_id]
         dist = np.linalg.norm(ee_pos - ball_pos)
 
         # Initialize previous distance (for progress reward)
         if not hasattr(self, "prev_dist"):
             self.prev_dist = dist
 
-        # Combine components
-        reward = -dist
+        # --- Shaping rewards ---
+        # Dense distance-based reward (closer = higher reward)
+        dense_reward = 1.0 / (1.0 + 10 * dist)
 
-        # Success condition
-        terminated = dist < 0.05
-        #print(dist)
+        # Reward for progress toward the ball since last step
+        progress = np.clip(self.prev_dist - dist, -0.03, 0.03)
+
+        # Orientation reward (encourages tip to face target)
+        xmat = self.data.site_xmat[ee_id].reshape(3, 3)
+        ee_dir = xmat[:, 0]  # local x-axis in world frame
+        target_dir = (ball_pos - ee_pos)
+        if np.linalg.norm(target_dir) > 0:
+            target_dir /= np.linalg.norm(target_dir)
+        orientation_reward = np.dot(ee_dir, target_dir)
+
+        # Small penalty for large actions to encourage smooth control
+        action_penalty = 0.05 * np.sum(np.square(action))
+
+        # Combine rewards
+        reward = 3.0 * dense_reward + 2.0 * progress + 0.25 * orientation_reward - action_penalty
+
+        # --- Success bonus ---
+        success_threshold = 0.05
+        terminated = dist < success_threshold
+        truncated = self.step_count >= max_steps
+
         if terminated:
-            reward += 5.0  # Bonus for reaching the goal
+            reward += 100.0  # Increased terminal reward for precision
+            print("MADE IT", reward)
+        elif truncated:
+            print("Episode truncated", reward)
+
+        # Optional: small penalty for hovering too long above ball
+        if dist < 0.1 and not terminated:
+            reward -= 0.01  # encourages downward movement toward ball
 
         # Update previous distance
         self.prev_dist = dist
 
-        truncated = False
         return self._get_obs(), reward, terminated, truncated, {}
 
     def render(self):
