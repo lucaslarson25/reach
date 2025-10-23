@@ -44,7 +44,7 @@ try:
                 env.viewer.sync()
 
             # Limit framerate to ~60 FPS
-            #time.sleep(1/120)
+            time.sleep(1/60)
 
         print(f"Episode {ep + 1} finished in {elapsed_time:.2f}s with total reward {ep_reward:.2f}")
         print("Episode complete")
