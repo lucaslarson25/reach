@@ -95,7 +95,7 @@ def main():
     model.learn(total_timesteps=total_timesteps, callback=callback)
 
     # === Save model ===
-    save_path = "ppo_z1_parallel"
+    save_path = "policies/ppo_z1_parallel"
     model.save(save_path)
     print(f"Model saved as {save_path}.zip")
 
