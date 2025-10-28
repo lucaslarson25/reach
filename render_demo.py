@@ -8,7 +8,7 @@ import mujoco.viewer
 env = Z1ReachEnv(render_mode="human")
 
 # Load trained PPO model
-model = PPO.load("ppo_z1_parallel_1m_great", env=env)
+model = PPO.load("policies/ppo_z1_parallel_1m_great", env=env)
 
 num_episodes = 20
 max_episode_duration = 30.0  # seconds
