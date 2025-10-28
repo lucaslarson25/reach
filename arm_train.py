@@ -90,7 +90,7 @@ def main():
     )
 
     # === Train with progress bar ===
-    total_timesteps = 1_000_000
+    total_timesteps = 1_500_000
     print(f"Training PPO for {total_timesteps:,} timesteps...")
     model.learn(total_timesteps=total_timesteps, callback=callback)
 
