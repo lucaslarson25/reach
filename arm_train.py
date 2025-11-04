@@ -7,7 +7,6 @@ import numpy as np
 import tqdm
 
 
-
 class TerminationRatioCallback(BaseCallback):
     def __init__(self):
         super().__init__()
@@ -15,25 +14,20 @@ class TerminationRatioCallback(BaseCallback):
         self.total_episodes = 0
 
     def _on_rollout_start(self) -> None:
-        # reset counters for this rollout
         self.terminated_episodes = 0
         self.total_episodes = 0
 
     def _on_step(self) -> bool:
-        # SB3 locals typically contain 'dones' and 'infos'
         dones = self.locals.get("dones", None)
         infos = self.locals.get("infos", None)
 
-        # Handle both vectorized and non-vectorized cases
         if isinstance(dones, (list, np.ndarray)):
-            # Vec env: 'dones' aligns with 'infos' list
             for done, info in zip(dones, infos or []):
                 if done:
                     self.total_episodes += 1
                     if isinstance(info, dict) and info.get("terminated", False):
                         self.terminated_episodes += 1
         elif isinstance(dones, (bool, np.bool_)):
-            # Non-vec env: single bool and single info dict
             if dones:
                 self.total_episodes += 1
                 if isinstance(infos, dict) and infos.get("terminated", False):
@@ -44,12 +38,11 @@ class TerminationRatioCallback(BaseCallback):
     def _on_rollout_end(self):
         if self.total_episodes > 0:
             ratio = self.terminated_episodes / self.total_episodes
-            # This adds the value to SB3's logger
             self.logger.record("custom/terminated_ratio", f"{self.terminated_episodes}/{self.total_episodes} = {(ratio*100):.2f}%")
 
-        # reset counts each rollout
         self.terminated_episodes = 0
         self.total_episodes = 0
+
 
 def make_env(rank):
     """
@@ -73,7 +66,7 @@ def main():
     callback = CallbackList([
         ProgressBarCallback(),
         TerminationRatioCallback()
-        ])
+    ])
 
     # === Define PPO model ===
     policy_kwargs = dict(net_arch=[256, 256])
@@ -82,15 +75,15 @@ def main():
         env,
         policy_kwargs=policy_kwargs,
         verbose=1,
-        device="cuda",           # GPU acceleration
-        n_steps=2048,            # per environment
+        device="cuda",           # GPU acceleration for CUDA systems
+        n_steps=2048,            # number of steps per environment
         batch_size=64,
         n_epochs=10,
         learning_rate=3e-4,
     )
 
     # === Train with progress bar ===
-    total_timesteps = 1_500_000
+    total_timesteps = 300_000
     print(f"Training PPO for {total_timesteps:,} timesteps...")
     model.learn(total_timesteps=total_timesteps, callback=callback)
 

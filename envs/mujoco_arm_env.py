@@ -35,14 +35,13 @@ class Z1ReachEnv(gym.Env):
         ee_pos = self.data.site_xpos[ee_id]
         ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
         ball_pos = self.data.xpos[ball_id]
-        return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos])
+        # Ensure float32 for MPS
+        return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos]).astype(np.float32)
 
     def _set_ball_random_pos(self):
         x = np.random.uniform(0.2, 0.3)
         y = np.random.uniform(0.2, 0.3)
-
         y *= np.random.choice([1, -1])
-
         z = 0.05
         self.model.body("ball").pos[:] = [x, y, z]
         mujoco.mj_forward(self.model, self.data)
@@ -61,7 +60,7 @@ class Z1ReachEnv(gym.Env):
         self.prev_dist = np.linalg.norm(ee_pos - ball_pos)
         self.step_count = 0
 
-        return self._get_obs(), {}
+        return self._get_obs().astype(np.float32), {}
 
     def step(self, action):
         # Apply scaled actions to actuators
@@ -115,9 +114,7 @@ class Z1ReachEnv(gym.Env):
 
         if terminated:
             reward += 550.0  # Strong terminal reward
-            #print("OOO")
         elif truncated:
-            #print("0")
             pass
 
         # Optional: small penalty for hovering too long above ball
@@ -127,7 +124,8 @@ class Z1ReachEnv(gym.Env):
         # Update previous distance
         self.prev_dist = dist
 
-        return self._get_obs(), reward, terminated, truncated, {"terminated": terminated}
+        # Ensure obs (and reward for SB3) are correct dtypes on MPS
+        return self._get_obs().astype(np.float32), float(reward), terminated, truncated, {"terminated": terminated}
 
     def render(self):
         if self.render_mode == "human":
