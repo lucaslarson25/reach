@@ -26,7 +26,6 @@ tmp/
 temp/
 
 # Machine learning artifacts
-*.zip
 *.ckpt
 *.pth
 *.pt
