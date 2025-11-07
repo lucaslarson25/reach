@@ -1,154 +1,117 @@
-import time
-import numpy as np
-from stable_baselines3 import PPO
-import mujoco.viewer
-
-# updated import path for the env in your new structure
-from scenes.industrial_arm_reaching.env import Z1ReachEnv
-
-
-# Create environment with human-render mode
-env = Z1ReachEnv(render_mode="human")
 # renders/render_demo.py
-# Minimal changes from original:
-# - accepts --model and --policy flags
-# - imports env from your new scenes path, but falls back to old path if needed
-# - passes model_path to the env if supported; otherwise falls back gracefully
+#
+# Usage (x86 / CUDA / standard Python):
+#   .venv/bin/python renders/render_demo.py --config config/render_run.yaml
+#
+# This script:
+#   - Loads render/config settings from YAML
+#   - Dynamically imports the specified env class
+#   - Loads the specified PPO policy (.zip)
+#   - Uses MuJoCo's standard blocking viewer (works on Linux/Windows/x86)
+#
+# Assumes:
+#   - MuJoCo is installed and configured
+#   - You're running from repo root (so YAML relative paths resolve)
+#   - config/render_run.yaml has:
+#       scene.env_class: "package.module:ClassName"
+#       scene.model_xml: "path/to/model.xml"
+#       policy.path:     "path/to/policy.zip"
 
-import time
-import argparse
 import os
 import sys
+import time
+import argparse
+import traceback
+
+# Make repo root importable
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 import mujoco
 import mujoco.viewer
 import numpy as np
 from stable_baselines3 import PPO
 
-# --- keep imports as close to original as possible, but support new structure ---
-try:
-    # preferred: new scene-based env
-    from scenes.industrial_arm_reaching.env import Z1ReachEnv  # type: ignore
-except Exception:
-    # fallback: old path (for legacy compatibility)
-    from envs.mujoco_arm_env import Z1ReachEnv  # type: ignore
+from config.render_loader import load_render_config, import_env
 
 
 def main():
-    # Defaults mirror your current repo layout
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    default_model = os.path.join(
-        repo_root, "scenes", "industrial_arm_reaching", "models", "z1scene.xml"
+    parser = argparse.ArgumentParser(description="Scene-agnostic MuJoCo render demo (x86/CUDA).")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config/render_run.yaml",
+        help="Path to render YAML config."
     )
-    default_policy = os.path.join(
-        repo_root, "scenes", "industrial_arm_reaching", "policies", "ppo_z1_parallel_1.5m_best.zip"
-    )
-
-    parser = argparse.ArgumentParser(description="Render trained PPO policy (x86/CUDA friendly).")
-    parser.add_argument("--model", type=str, default=default_model, help="Path to MuJoCo XML model.")
-    parser.add_argument("--policy", type=str, default=default_policy, help="Path to PPO .zip file.")
-    parser.add_argument("--episodes", type=int, default=20, help="Number of episodes.")
-    parser.add_argument("--max-seconds", type=float, default=30.0, help="Max seconds per episode.")
-    parser.add_argument("--deterministic", action="store_true", help="Deterministic policy actions.")
     args = parser.parse_args()
 
-    if not os.path.exists(args.model):
-        raise FileNotFoundError(f"Model XML not found: {args.model}")
-    if not os.path.exists(args.policy):
-        raise FileNotFoundError(f"Policy file not found: {args.policy}")
+    # Load configuration
+    cfg = load_render_config(args.config)
+    scene = cfg["scene"]
+    policy_cfg = cfg.get("policy", {})
+    run = cfg.get("run", {})
 
-    # --- Create environment with human-render mode (try to pass model_path if supported) ---
+    env_class_path = scene["env_class"]
+    model_xml = scene["model_xml"]
+    policy_path = policy_cfg.get("path")
+
+    if not policy_path or not os.path.exists(policy_path):
+        raise FileNotFoundError(f"Policy file not found at policy.path: {policy_path}")
+
+    episodes = int(run.get("episodes", 10))
+    max_seconds = float(run.get("max_seconds_per_ep", 30.0))
+    deterministic = bool(run.get("deterministic", True))
+
+    # Import env class
+    EnvClass = import_env(env_class_path)
+
+    # Create environment (try model_path; fallback to old signature)
     try:
-        env = Z1ReachEnv(model_path=args.model, render_mode="human")
+        env = EnvClass(model_path=model_xml, render_mode="human")
     except TypeError:
-        # older constructor without model_path parameter
-        env = Z1ReachEnv(render_mode="human")
+        env = EnvClass(render_mode="human")
 
-    # --- Load trained PPO model (x86/CUDA fine) ---
-    model = PPO.load(args.policy, env=env)
+    # Load PPO model
+    model = PPO.load(policy_path, env=env)
 
-    # --- Launch blocking viewer (works on Windows/Linux; use mjpython+launch_passive for macOS) ---
-    if env.render_mode == "human" and getattr(env, "viewer", None) is None:
+    # Launch standard blocking viewer
+    if getattr(env, "viewer", None) is None:
         env.viewer = mujoco.viewer.launch(env.model, env.data)
 
     try:
-        for ep in range(args.episodes):
+        for ep in range(episodes):
             obs, _ = env.reset()
             done = False
             ep_reward = 0.0
-            start_time = time.time()
+            start = time.time()
 
             while not done:
-                action, _ = model.predict(obs, deterministic=args.deterministic)
+                action, _ = model.predict(obs, deterministic=deterministic)
                 obs, reward, terminated, truncated, info = env.step(action)
                 ep_reward += reward
 
-                elapsed_time = time.time() - start_time
-                if elapsed_time >= args.max_seconds:
+                elapsed = time.time() - start
+                if elapsed >= max_seconds:
                     truncated = True
 
-                done = terminated or truncated
+                done = bool(terminated or truncated)
 
-                if env.render_mode == "human" and env.viewer is not None:
+                if env.viewer is not None:
                     env.viewer.sync()
 
-                # ~120 FPS like original
-                time.sleep(1 / 120)
+                # ~120 FPS throttle
+                time.sleep(1.0 / 120.0)
 
-            print(f"Episode {ep + 1} finished in {elapsed_time:.2f}s with total reward {ep_reward:.2f}")
+            print(f"[Episode {ep + 1}/{episodes}] reward={ep_reward:.2f} time={elapsed:.2f}s")
 
+    except KeyboardInterrupt:
+        print("\nInterrupted by user.")
+    except Exception:
+        traceback.print_exc()
     finally:
         env.close()
 
 
 if __name__ == "__main__":
-    # Ensure repo root is on sys.path (keeps imports working when run as a script)
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    if repo_root not in sys.path:
-        sys.path.insert(0, repo_root)
     main()
-# Load trained PPO model (updated path; include .zip)
-model = PPO.load(
-    "scenes/industrial_arm_reaching/policies/ppo_z1_parallel_1.5m_best.zip",
-    env=env
-)
-
-num_episodes = 20
-max_episode_duration = 30.0  # seconds
-
-try:
-    # Launch a blocking viewer for real-time visualization
-    if env.render_mode == "human" and env.viewer is None:
-        env.viewer = mujoco.viewer.launch(env.model, env.data)
-
-    for ep in range(num_episodes):
-        obs, _ = env.reset()
-        done = False
-        ep_reward = 0.0
-        start_time = time.time()
-
-        while not done:
-            # Predict action from trained model
-            action, _ = model.predict(obs, deterministic=True)
-
-            # Step environment
-            obs, reward, terminated, truncated, info = env.step(action)
-            ep_reward += reward
-
-            # Check time limits
-            elapsed_time = time.time() - start_time
-            if elapsed_time >= max_episode_duration:
-                truncated = True
-
-            done = terminated or truncated
-
-            # Render the frame (real-time visualization)
-            if env.render_mode == "human":
-                env.viewer.sync()
-
-            # Limit frame rate to about 120 FPS for smooth playback
-            time.sleep(1 / 120)
-
-        print(f"Episode {ep + 1} finished in {elapsed_time:.2f}s with total reward {ep_reward:.2f}")
-
-finally:
-    env.close()

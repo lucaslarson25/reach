@@ -1,93 +1,117 @@
 # renders/render_demo_mac.py
-import argparse
-import time
+#
+# Usage (macOS, required):
+#   .venv/bin/mjpython renders/render_demo_mac.py --config config/render_run.yaml
+#
+# This script:
+#   - Loads render/config settings from YAML
+#   - Dynamically imports the specified env class
+#   - Loads the specified PPO policy (.zip)
+#   - Uses MuJoCo's passive viewer (required on macOS)
+#
+# Assumes:
+#   - MuJoCo and mjpython are properly installed
+#   - You're running from the repo root (so YAML relative paths resolve)
+#   - config/render_run.yaml includes:
+#       scene.env_class: "package.module:ClassName"
+#       scene.model_xml: "path/to/model.xml"
+#       policy.path:     "path/to/policy.zip"
+
+import os
 import sys
+import time
+import argparse
+import traceback
+
+# Anchor repo root for imports
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 import mujoco
 import mujoco.viewer
+import numpy as np
 from stable_baselines3 import PPO
 
-# Prefer scene-specific env import (new structure)
-try:
-    from scenes.industrial_arm_reaching.env import Z1ReachEnv  # update if you move the env
-except ImportError:
-    # Back-compat shim if you still have the old path lying around
-    from envs.mujoco_arm_env import Z1ReachEnv  # type: ignore
-
-
-def parse_args():
-    p = argparse.ArgumentParser(description="Render a trained PPO policy on macOS (MuJoCo viewer requires mjpython).")
-    p.add_argument(
-        "--model",
-        default="scenes/industrial_arm_reaching/models/z1scene.xml",
-        help="Path to MuJoCo XML scene file.",
-    )
-    p.add_argument(
-        "--policy",
-        default="scenes/industrial_arm_reaching/policies/ppo_z1_parallel_1.5m_best.zip",
-        help="Path to SB3 .zip policy.",
-    )
-    p.add_argument("--episodes", type=int, default=10, help="Number of episodes to render.")
-    p.add_argument("--max-secs", type=float, default=30.0, help="Max seconds per episode before truncation.")
-    return p.parse_args()
-
-
-def make_env(model_path: str):
-    """
-    Try to construct the environment with a model_path if supported.
-    Fallback to old signature if not.
-    """
-    try:
-        # If your env __init__ supports model_path=...
-        env = Z1ReachEnv(render_mode="human", model_path=model_path)  # type: ignore[arg-type]
-        return env
-    except TypeError:
-        # Fallback for older envs that load a fixed internal XML path
-        print(
-            "[render_demo_mac] Warning: Z1ReachEnv does not accept model_path. "
-            "Using its internal default XML instead.",
-            file=sys.stderr,
-        )
-        return Z1ReachEnv(render_mode="human")
+from config.render_loader import load_render_config, import_env
 
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="Scene-agnostic MuJoCo render demo (macOS).")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config/render_run.yaml",
+        help="Path to render YAML config.",
+    )
+    args = parser.parse_args()
 
-    # 1) Create env (tries model_path, falls back if unsupported)
-    env = make_env(args.model)
+    # Load config
+    cfg = load_render_config(args.config)
+    scene = cfg["scene"]
+    policy_cfg = cfg.get("policy", {})
+    run = cfg.get("run", {})
 
-    # 2) Load PPO policy
-    ppo = PPO.load(args.policy, env=env)
+    env_class_path = scene["env_class"]
+    model_xml = scene["model_xml"]
 
-    # 3) Launch viewer with the MuJoCo model/data (not the PPO!)
-    # On macOS, this requires running under `mjpython`.
-    if env.render_mode == "human" and getattr(env, "viewer", None) is None:
+    policy_path = policy_cfg.get("path")
+    if not policy_path or not os.path.exists(policy_path):
+        raise FileNotFoundError(f"Policy file not found at policy.path: {policy_path}")
+
+    episodes = int(run.get("episodes", 10))
+    max_seconds = float(run.get("max_seconds_per_ep", 30.0))
+    deterministic = bool(run.get("deterministic", True))
+
+    # Import environment class
+    EnvClass = import_env(env_class_path)
+
+    # Instantiate environment
+    try:
+        env = EnvClass(model_path=model_xml, render_mode="human")
+    except TypeError:
+        # Fallback for envs without model_path arg
+        env = EnvClass(render_mode="human")
+
+    # Load PPO model
+    model = PPO.load(policy_path, env=env)
+
+    # Launch passive viewer (required on macOS with mjpython)
+    if getattr(env, "viewer", None) is None:
         env.viewer = mujoco.viewer.launch_passive(env.model, env.data)
 
     try:
-        for ep in range(args.episodes):
+        for ep in range(episodes):
             obs, _ = env.reset()
             done = False
             ep_reward = 0.0
             start = time.time()
 
             while not done:
-                action, _ = ppo.predict(obs, deterministic=True)
+                # Policy action
+                action, _ = model.predict(obs, deterministic=deterministic)
                 obs, reward, terminated, truncated, info = env.step(action)
                 ep_reward += reward
 
-                # time limit
-                if time.time() - start >= args.max_secs:
+                elapsed = time.time() - start
+                if elapsed >= max_seconds:
                     truncated = True
 
-                done = terminated or truncated
+                done = bool(terminated or truncated)
 
-                if env.render_mode == "human" and env.viewer is not None:
+                # Render
+                if env.viewer is not None:
                     env.viewer.sync()
-                time.sleep(1 / 120)
 
-            print(f"Episode {ep + 1}: total reward = {ep_reward:.2f}")
+                # Throttle to ~120 FPS
+                time.sleep(1.0 / 120.0)
 
+            print(f"[Episode {ep + 1}/{episodes}] reward={ep_reward:.2f} time={elapsed:.2f}s")
+
+    except KeyboardInterrupt:
+        print("\nInterrupted by user.")
+    except Exception:
+        traceback.print_exc()
     finally:
         env.close()
 
