@@ -1,3 +1,32 @@
+# Virtual environments
+.venv/
+env/
+venv/
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS files
+.DS_Store
+
+# Logs and temporary files
+*.log
+nohup.out
+tmp/
+temp/
+
+# Machine learning artifacts
+*.ckpt
+*.pth
+*.pt
+
+# MuJoCo temporary or generated files
+*.mjb
+*.xml.tmp
+
 # Python
 __pycache__/
 *.py[cod]

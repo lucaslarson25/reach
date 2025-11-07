@@ -1,0 +1,11 @@
+scene:
+  env_class: scenes.industrial_arm_reaching.env:Z1ReachEnv
+  model_xml: scenes/industrial_arm_reaching/models/z1scene.xml
+
+policy:
+  path: scenes/industrial_arm_reaching/policies/ppo_z1_parallel_1.5m_best.zip
+
+run:
+  episodes: 10
+  max_seconds_per_ep: 30.0
+  deterministic: true

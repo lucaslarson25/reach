@@ -1,199 +1,31 @@
-# ============================================================================
-# REACH Project - Python Dependencies
-# ============================================================================
-# This file lists all Python packages required for the REACH simulation project.
-# 
-# INSTALLATION:
-#   pip install -r requirements.txt
-#
-# NOTE: Uncomment the packages you need by removing the '#' at the start of each line.
-#       Start with core packages first, then add others as needed.
-#
-# For development on Monsoon HPC, you may need to load modules first:
-#   module load python/3.10
-#   module load cuda/11.8  (if using GPU acceleration for training)
-# ============================================================================
+# to install run command: pip install -r requirements.txt
 
-# Core Scientific Computing
-# -------------------------
-# These are fundamental packages for numerical operations and array manipulation.
-# Think of these as the "math tools" that everything else builds on.
-#
-numpy==1.26.4            # Arrays, matrices, mathematical operations
-#                        # Example: storing joint angles as arrays [0.5, 1.2, -0.3]
-#
-# scipy>=1.10.0          # Advanced math (optimization, linear algebra, statistics)
-#                        # Example: rotation matrix conversions, signal processing
-
-# MuJoCo Physics Simulation
-# -------------------------
-# MuJoCo is a physics engine that simulates how the robotic arm moves in 3D space.
-# It handles gravity, forces, collisions, and realistic motion dynamics.
-# Think of it like a "video game physics engine" but for robotics research.
-#
-mujoco==3.1.6            # Core physics engine - simulates arm movement, contacts, forces
-#                        # Documentation: https://mujoco.readthedocs.io/
-#
-# dm-control>=1.0.0      # DeepMind's robotics toolkit (optional)
-#                        # Provides example robot environments and utilities
-#                        # We may use this for reference/inspiration
-
-# Reinforcement Learning
-# ----------------------
-# RL is how we "teach" the robot arm to perform tasks through trial and error.
-# The agent tries actions, gets rewards, and learns which actions are good.
-# Think of it like training a dog with treats - good actions get positive rewards.
-#
-gymnasium>=0.29.0,<1.0.0 # Standard interface for RL environments
-#                        # Defines how our robot "world" communicates with the AI agent
-#                        # Key concepts: observations (what the robot sees), 
-#                        #               actions (what it can do),
-#                        #               rewards (feedback on performance)
-#
+# ---- Core RL + Sim ----
+numpy==1.26.4
+gymnasium>=0.29,<1.0
 stable-baselines3==2.3.2
-#                           # Pre-built RL algorithms (PPO, SAC, etc.)
-#                           # These are the "AI brains" that learn to control the arm
-#                           # PPO = Proximal Policy Optimization (our primary algorithm)
-#                           # SAC = Soft Actor-Critic (alternative algorithm)
-#                           # Documentation: https://stable-baselines3.readthedocs.io/
-#
-# sb3-contrib>=2.0.0     # Additional experimental RL algorithms
-#                        # Extra options if PPO/SAC don't work well
+mujoco==3.2.0
+torch>=2.3
 
-# Deep Learning Framework
-# -----------------------
-# Neural networks are the "brain" that processes sensor data and decides actions.
-# PyTorch is the tool we use to build and train these neural networks.
-#
-torch>=2.3.0           # PyTorch - builds neural networks (the AI's "brain")
-#                        # The policy network takes observations (joint angles, positions)
-#                        # and outputs actions (joint torques/commands)
-#                        # Tutorial: https://pytorch.org/tutorials/
-#
-# torchvision>=0.15.0    # Computer vision tools for PyTorch
-#                        # Helps process camera images for YOLO object detection
-
-# Computer Vision (YOLO)
-# ----------------------
-# YOLO helps the robot "see" and identify objects (cups, utensils, etc.)
-# It analyzes camera images and says "there's a cup at position X, Y"
-#
-# ultralytics>=8.0.0     # YOLOv8 - state-of-the-art object detection
-#                        # Input: camera image → Output: "cup detected at (x, y)"
-#                        # "YOLO" = You Only Look Once (a type of fast object detector)
-#                        # Documentation: https://docs.ultralytics.com/
-#
-# opencv-python>=4.8.0   # OpenCV - image processing toolkit
-#                        # Handles camera feeds, image transformations, drawing boxes
-#                        # Example: resize images, convert colors, draw detection boxes
-#
-# Pillow>=9.5.0          # PIL - basic image loading and manipulation
-#                        # Simple operations like opening/saving images
-
-# Experiment Tracking & Logging
-# -----------------------------
-# These tools help you monitor training progress and compare different experiments.
-# Essential for understanding if your agent is learning and which settings work best.
-#
-# tensorboard>=2.13.0    # TensorBoard - visualizes training metrics over time
-#                        # Creates graphs showing: reward increasing, loss decreasing, etc.
-#                        # Start with: tensorboard --logdir logs/
-#                        # Then open: http://localhost:6006 in your browser
-#
-# wandb>=0.15.0          # Weights & Biases - cloud-based experiment tracking (optional)
-#                        # Like TensorBoard but stores results online, easier to share
-#                        # Good for comparing experiments across team members
-#                        # Requires account: https://wandb.ai/
-
-# Configuration Management
-# ------------------------
-# Configuration files store all your experiment settings (hyperparameters, paths, etc.)
-# This keeps settings separate from code, making experiments reproducible.
-#
-# pyyaml>=6.0            # Reads/writes YAML configuration files
-#                        # YAML is a human-readable format for storing settings
-#                        # Example: learning_rate: 0.0003 (easier than Python dicts)
-#
-# hydra-core>=1.3.0      # Advanced config management (optional)
-#                        # Helps manage complex configurations and parameter sweeps
-#                        # Only needed if you want to run many experiments automatically
-
-# Utilities
-# ---------
-# Helper tools for visualization and user feedback during training.
-#
-tqdm==4.66.4             # Progress bars for long-running processes
-#                        # Shows: [████████░░] 80% complete, 2 min remaining
-#                        # Makes waiting for training less painful!
-#
-matplotlib==3.9.2      # Creating plots and graphs
-#                        # Visualize: reward curves, trajectories, sensor data
-#                        # Standard Python plotting library
-#
-# seaborn>=0.12.0        # Beautiful statistical plots
-#                        # Built on matplotlib, makes prettier graphs automatically
-#                        # Good for analyzing experimental results
-pygame==2.6.0
-
+# ---- Utils / logging ----
+tqdm==4.66.4
+rich>=13.5.0
 pandas==2.2.3
+matplotlib==3.9.2
 
-# Development Tools
-# -----------------
-# These help maintain code quality and make development easier.
-# Important for team projects to keep code consistent and bug-free.
-#
-# pytest>=7.4.0          # Testing framework - verify code works correctly
-#                        # Write tests to check: "Does environment reset properly?"
-#                        # Run with: pytest tests/
-#
-# black>=23.0.0          # Automatic code formatter
-#                        # Makes everyone's code look the same (consistent style)
-#                        # Run with: black src/
-#
-# flake8>=6.0.0          # Code quality checker (linter)
-#                        # Finds potential bugs, style issues, unused variables
-#                        # Run with: flake8 src/
-#
-# ipython>=8.14.0        # Enhanced Python shell
-#                        # Better than regular Python shell: tab completion, syntax highlighting
-#
-jupyterlab==4.2.5         # Jupyter notebooks
-#                        # Interactive coding environment (mix code, text, plots)
-#                        # Great for experimentation and debugging
-#                        # Start with: jupyter notebook
+# ---- Vision / video (pick one OpenCV depending on environment) ----
+# For laptops / local dev with GUI windows:
+opencv-python==4.10.0.84
+# For servers/HPC without GUI (comment out the line above and use this instead):
+# opencv-python-headless==4.10.0.84
 
-# Data Management (for experiment tracking)
-# -----------------------------------------
-# Databases help store and compare experimental results across the team.
-#
-# Option 1: SQLite (recommended for getting started)
-# sqlite3                # Built into Python - no installation needed!
-#                        # Lightweight file-based database
-#                        # Good for: local development, single user
-#                        # Creates a .db file to store experiment data
-#
-# Option 2: PostgreSQL (for team collaboration)
-# psycopg2-binary>=2.9.0 # PostgreSQL database adapter
-#                        # More powerful, supports multiple users
-#                        # Good for: shared team database, production
-#                        # Requires PostgreSQL server setup
+Pillow>=10.0.0
+imageio>=2.34
+imageio-ffmpeg>=0.5.0
 
-# Monitoring and UI (optional but useful for demos)
-# -------------------------------------------------
-# Tools for creating dashboards and monitoring interfaces.
-#
-# streamlit>=1.28.0      # Quick web-based dashboards
-#                        # Create interactive UIs with just Python
-#                        # Great for demos and monitoring training
-#                        # Start with: streamlit run dashboard.py
-#
-# flask>=3.0.0           # Web framework for custom UIs
-#                        # More flexible than Streamlit
-#                        # Good for building custom interfaces
-#
-# gradio>=4.0.0          # Quick ML model demos
-#                        # Super easy to create interfaces for models
-#                        # Good for showcasing to sponsors
+# Jupyter notebooks
+jupyterlab==4.2.5
+
 moviepy==1.0.3
 
 ffmpeg==1.4
