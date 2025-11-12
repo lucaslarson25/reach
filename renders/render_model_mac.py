@@ -1,32 +1,47 @@
-import argparse
+# renders/render_model_mac.py
+#
+# Usage (macOS + mjpython):
+#   .venv/bin/mjpython renders/render_model_mac.py --config config/render_run.yaml
+# or:
+#   .venv/bin/mjpython renders/render_model_mac.py --model scenes/industrial_arm_reaching/models/z1scene.xml
+#
+# This script:
+#   - Loads model_xml from YAML by default (scene.model_xml)
+#   - Or lets you override with --model
+#   - Opens MuJoCo passive viewer (required on macOS)
+#   - Optionally prints distance between "eetip" site and "ball" body if present
+#
+# Assumes:
+#   - MuJoCo + mjpython installed
+#   - Run from repo root for relative paths to work
+
 import os
+import sys
 import time
+import argparse
+
+# Repo root on path
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 import numpy as np
 import mujoco
 import mujoco.viewer
 
-
-# ============================================================
-# Run with:
-#   .venv/bin/mjpython -m renders.render_model_mac
-# Or specify a custom model:
-#   .venv/bin/mjpython -m renders.render_model_mac --model scenes/industrial_arm_reaching/models/z1scene.xml
-# ============================================================
+from config.render_loader import load_render_config
 
 
 def show_model(xml_path: str) -> None:
-    """
-    Display a MuJoCo model interactively on macOS using mjpython and launch_passive().
-    """
     if not os.path.exists(xml_path):
-        print(f"Error: Could not find model file at: {xml_path}")
+        print(f"Error: model XML not found at: {xml_path}")
         return
 
-    print(f"📦 Loading MuJoCo model: {xml_path}")
+    print(f"Loading MuJoCo model: {xml_path}")
     model = mujoco.MjModel.from_xml_path(xml_path)
     data = mujoco.MjData(model)
 
-    # Safe name lookup for optional IDs
+    # Try to resolve ids if present
     def safe_id(obj_type, name):
         try:
             return mujoco.mj_name2id(model, obj_type, name)
@@ -36,16 +51,13 @@ def show_model(xml_path: str) -> None:
     ee_id = safe_id(mujoco.mjtObj.mjOBJ_SITE, "eetip")
     ball_id = safe_id(mujoco.mjtObj.mjOBJ_BODY, "ball")
 
-    print("Model loaded successfully.")
     print("Opening MuJoCo viewer — press ESC or close the window to exit.")
 
-    # Passive viewer (does not take over simulation control)
     with mujoco.viewer.launch_passive(model, data) as viewer:
         try:
             while viewer.is_running():
                 mujoco.mj_step(model, data)
 
-                # If model has both end-effector and ball, compute distance
                 if ee_id != -1 and ball_id != -1:
                     ee_pos = data.site_xpos[ee_id]
                     ball_pos = data.xpos[ball_id]
@@ -53,8 +65,7 @@ def show_model(xml_path: str) -> None:
                     print(f"Distance (EE → Ball): {dist:.4f}", end="\r")
 
                 viewer.sync()
-                time.sleep(1 / 120)  # smooth refresh without CPU overload
-
+                time.sleep(1.0 / 120.0)
         except KeyboardInterrupt:
             print("\nViewer closed by user.")
         finally:
@@ -62,22 +73,28 @@ def show_model(xml_path: str) -> None:
 
 
 def main():
-    # Default model: Z1 arm reaching scene
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    default_model = os.path.join(
-        repo_root, "scenes", "industrial_arm_reaching", "models", "z1scene.xml"
+    parser = argparse.ArgumentParser(description="MuJoCo model viewer (macOS).")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config/render_run.yaml",
+        help="YAML config (to read scene.model_xml).",
     )
-
-    parser = argparse.ArgumentParser(description="Render a MuJoCo model (macOS).")
     parser.add_argument(
         "--model",
         type=str,
-        default=default_model,
-        help="Path to the MuJoCo XML model file.",
+        default=None,
+        help="Override: direct path to model XML.",
     )
     args = parser.parse_args()
 
-    show_model(args.model)
+    if args.model:
+        xml_path = args.model
+    else:
+        cfg = load_render_config(args.config)
+        xml_path = cfg["scene"]["model_xml"]
+
+    show_model(xml_path)
 
 
 if __name__ == "__main__":

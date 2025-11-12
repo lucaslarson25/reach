@@ -1,74 +1,105 @@
-# ---------------------------------------------------------------------
-# REACH Project - .gitignore
-# ---------------------------------------------------------------------
-
-# --- Python cache & compiled files ---
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.so
-
-# --- Virtual environments ---
+# Virtual environments
 .venv/
-venv/
 env/
-ENV/
+venv/
 
-# --- Editor / OS files ---
-.DS_Store
-.idea/
+# IDE / Editor files
 .vscode/
+.idea/
 *.swp
+*.swo
 
-# --- Build & packaging ---
-build/
-dist/
-*.egg-info/
+# macOS files
+.DS_Store
 
-# --- Logs & checkpoints ---
-logs/
+# Logs and temporary files
 *.log
-*.out
-*.err
-*.ckpt
-*.pid
+nohup.out
+tmp/
+temp/
 
-# --- Model outputs & policies ---
-policies/
-checkpoints/
-models/*.zip
+# Machine learning artifacts
+*.ckpt
 *.pth
 *.pt
 
-# --- Temporary or experiment data ---
+# MuJoCo temporary or generated files
+*.mjb
+*.xml.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+Include/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+etc/
+scripts/
+pyvenv.cfg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+share/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data and Models (large files)
+data/
+models/*.pth
+models/*.pt
+models/*.pkl
+models/*.h5
+models/*.ckpt
+!models/.gitkeep
+
+# Logs and Results
+logs/
+results/
+*.log
+wandb/
+tensorboard/
+
+# MuJoCo
+*.xml.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
 tmp/
 temp/
-scratch/
-*.npy
-*.npz
-*.csv
-*.db
-*.sqlite
+*.tmp
 
-# --- Visualization & render outputs ---
-*.mp4
-*.avi
-*.gif
-*.png
-*.jpg
+# Environment variables
+.env
+.env.local
 
-# --- Jupyter notebooks & caches ---
-.ipynb_checkpoints/
-*.ipynb_save/
-
-# --- MoviePy & FFmpeg temp files ---
-*.mp3
-*.wav
-*.mov
-*.mkv
-
-# --- Environment / config artifacts ---
-*.cfg
-*.yaml~
-*.yml~

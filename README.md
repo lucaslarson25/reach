@@ -2,8 +2,10 @@
 
 ## Project Overview
 
-The **REACH Capstone Project** is a robotics simulation and reinforcement learning (RL) system developed at Northern Arizona University.
-It combines **MuJoCo physics simulation**, **PPO reinforcement learning**, and **web-based visualization** to train robotic arms to complete goal-driven tasks such as reaching and object interaction.
+The **REACH Capstone Project** is a robotics simulation and reinforcement learning (RL) platform developed at **Northern Arizona University**.
+It combines **MuJoCo physics simulation**, **PPO reinforcement learning**, and **Python-based visualization** to train robotic arms and other systems for precision control and interaction tasks.
+
+The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 / CUDA)** with a unified configuration layer driven by a YAML file.
 
 ---
 
@@ -11,22 +13,22 @@ It combines **MuJoCo physics simulation**, **PPO reinforcement learning**, and *
 
 ### Development Team
 
-- **Taylor Davis** ([tjd352@nau.edu](tjd352@nau.edu))
+- **Taylor Davis** ([tjd352@nau.edu](mailto:tjd352@nau.edu))
   **Role:** Team Lead / Coder / Architect
-  **Responsibilities:** Leadership, technical development, integration, and design direction.
+  **Responsibilities:** Integration, simulation architecture, and research coordination
 
-- **Victor Rodriguez** ([vr527@nau.edu](vr527@nau.edu))
+- **Victor Rodriguez** ([vr527@nau.edu](mailto:vr527@nau.edu))
   **Role:** Coder / Recorder / Architect
-  **Responsibilities:** Documentation, training experiments, and model development.
-  **Background:** U.S. Marine Corps veteran with leadership experience.
+  **Responsibilities:** Documentation, model development, and codebase maintenance
+  **Background:** U.S. Marine Corps veteran with leadership experience
 
-- **Clayton Ramsey** ([car723@nau.edu](car723@nau.edu))
+- **Clayton Ramsey** ([car723@nau.edu](mailto:car723@nau.edu))
   **Role:** Coder / Architect
-  **Responsibilities:** Simulation structure, collaboration, and testing.
+  **Responsibilities:** Environment structure, testing, and simulation support
 
-- **Lucas Larson** ([lwl33@nau.edu](lwl33@nau.edu))
+- **Lucas Larson** ([lwl33@nau.edu](mailto:lwl33@nau.edu))
   **Role:** Coder / Version Control Manager / Architect
-  **Responsibilities:** GitHub operations, branch management, and development coordination.
+  **Responsibilities:** GitHub operations, merge reviews, and repository management
 
 ---
 
@@ -44,17 +46,17 @@ It combines **MuJoCo physics simulation**, **PPO reinforcement learning**, and *
 
 ## Technology Stack
 
-- **Physics Engine:** [MuJoCo](https://mujoco.readthedocs.io/) 3.x
+- **Physics Engine:** [MuJoCo 3.x](https://mujoco.readthedocs.io/)
 - **RL Framework:** [Stable-Baselines3 (PPO)](https://stable-baselines3.readthedocs.io/)
 - **Deep Learning:** PyTorch 2.x
+- **Visualization:** MuJoCo Viewer (passive or active)
 - **Frontend:** HTML, CSS, Bootstrap 4
-- **Visualization:** MuJoCo Viewer (interactive or headless)
-- **Environment:** macOS ARM (M-series) + x86/CUDA support
-- **Version Control:** Git / GitHub
+- **Supported Environments:** macOS ARM (M-series) and x86 / CUDA
+- **Version Control:** Git + GitHub
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 reach/
@@ -62,8 +64,8 @@ reach/
 ├── requirements.txt
 │
 ├── config/
-│   ├── default.yaml
-│   └── reaching_example.yaml
+│   ├── render_run.yaml          # Defines scene, model, policy, and runtime settings
+│   └── render_loader.py         # Helper for reading and validating YAML configs
 │
 ├── documentation/
 │   ├── demos/
@@ -71,11 +73,11 @@ reach/
 │   ├── logos/
 │   └── *.pdf
 │
-├── renders/                      # Render demos and model viewers
-│   ├── render_demo.py            # Run PPO policy (x86 / CUDA)
-│   ├── render_demo_mac.py        # Run PPO policy (macOS / M-series)
-│   ├── render_model.py           # View a model interactively (x86 / CUDA)
-│   └── render_model_mac.py       # View a model interactively (macOS)
+├── renders/                     # Rendering and visualization scripts
+│   ├── render_demo.py           # x86 / CUDA policy renderer
+│   ├── render_demo_mac.py       # macOS policy renderer (uses mjpython)
+│   ├── render_model.py          # x86 / CUDA model viewer
+│   └── render_model_mac.py      # macOS model viewer (uses mjpython)
 │
 ├── scenes/
 │   ├── industrial_arm_reaching/
@@ -83,10 +85,6 @@ reach/
 │   │   ├── models/
 │   │   ├── policies/
 │   │   └── training/
-│   │       ├── arm_train.py
-│   │       ├── arm_train_mac.py
-│   │       └── eval_model.py
-│   │
 │   ├── cartpole/
 │   └── industrial_arm_reaching_with_welding/
 │
@@ -97,12 +95,12 @@ reach/
 │   ├── documents.html
 │   └── assets/
 │
-└── .venv/
+└── .venv/                       # Virtual environment (ignored by Git)
 ```
 
 ---
 
-## Getting Started
+## Setting Up the Environment
 
 ### 1. Clone the repository
 
@@ -113,11 +111,18 @@ cd reach
 
 ### 2. Create and activate a virtual environment
 
+**macOS / Linux**
+
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate      # macOS/Linux
-# OR on Windows:
-# .venv\Scripts\activate
+source .venv/bin/activate
+```
+
+**Windows (PowerShell)**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
@@ -126,181 +131,159 @@ source .venv/bin/activate      # macOS/Linux
 pip install -r requirements.txt
 ```
 
----
-
-## macOS (Apple Silicon) Instructions
-
-### Run the training demo
+### 4. Verify installation
 
 ```bash
-.venv/bin/python scenes/industrial_arm_reaching/training/arm_train_mac.py
+python -c "import mujoco; import torch; print('Setup complete.')"
 ```
+
+---
+
+## YAML Configuration
+
+The **`config/render_run.yaml`** file defines what model, policy, and environment are used for rendering.
+
+Example:
+
+```yaml
+scene:
+  env_class: scenes.industrial_arm_reaching.env:Z1ReachEnv
+  model_xml: scenes/industrial_arm_reaching/models/z1scene.xml
+
+policy:
+  path: scenes/industrial_arm_reaching/policies/ppo_z1_parallel_1.5m_best.zip
+
+run:
+  episodes: 10
+  max_seconds_per_ep: 30.0
+  deterministic: true
+```
+
+### To Change What’s Rendered
+
+Edit the following fields:
+
+- `scene.env_class`: Path to the environment Python class
+- `scene.model_xml`: Path to the MuJoCo XML model
+- `policy.path`: Path to the trained PPO policy `.zip`
+- `run.*`: Adjust runtime parameters like episode count or duration
+
+---
+
+## macOS (M-Series) Instructions
 
 ### Render a trained PPO policy
 
 ```bash
-.venv/bin/mjpython renders/render_demo_mac.py \
-  --model scenes/industrial_arm_reaching/models/z1scene.xml \
-  --policy scenes/industrial_arm_reaching/policies/ppo_z1_parallel_1.5m_best.zip
+.venv/bin/mjpython renders/render_demo_mac.py --config config/render_run.yaml
 ```
 
 ### View a model interactively
 
 ```bash
-.venv/bin/mjpython renders/render_model_mac.py \
-  --model scenes/industrial_arm_reaching/models/z1scene.xml
+.venv/bin/mjpython renders/render_model_mac.py --config config/render_run.yaml
 ```
 
 > **Note:**
-> macOS requires `mjpython` instead of `python` to enable MuJoCo’s Metal rendering backend.
-> This ensures smooth and hardware-accelerated visualization.
+> macOS requires **mjpython** to open MuJoCo’s passive viewer using Metal graphics.
+> The YAML file defines which model and policy are rendered, so no command-line flags are needed beyond the config path.
 
 ---
 
-## x86 / CUDA (Windows or Linux) Instructions
-
-### Run the training demo
-
-```bash
-.venv/bin/python scenes/industrial_arm_reaching/training/arm_train.py
-```
+## Windows / Linux (x86 / CUDA) Instructions
 
 ### Render a trained PPO policy
 
 ```bash
-.venv/bin/python renders/render_demo.py \
-  --model scenes/industrial_arm_reaching/models/z1scene.xml \
-  --policy scenes/industrial_arm_reaching/policies/ppo_z1_parallel_1.5m_best.zip
+.venv\Scripts\python.exe renders\render_demo.py --config config\render_run.yaml
 ```
 
 ### View a model interactively
 
 ```bash
-.venv/bin/python renders/render_model.py \
-  --model scenes/industrial_arm_reaching/models/z1scene.xml
+.venv\Scripts\python.exe renders\render_model.py --config config\render_run.yaml
 ```
 
 > **Tip:**
-> For CUDA acceleration, ensure PyTorch detects your GPU:
+> On CUDA systems, PyTorch will automatically use your GPU if available:
 >
 > ```python
 > import torch
 > print(torch.cuda.is_available())
 > ```
->
-> If `True`, PPO training will automatically leverage the GPU.
-
----
-
-## Configuration Notes
-
-- The YAML files in `/config` are **not actively used** in the current workflow.
-  They remain for reference and can be re-enabled for config-driven training later.
-- All hyperparameters and model paths are directly defined in:
-
-  - `arm_train.py`
-  - `arm_train_mac.py`
-  - `env.py`
 
 ---
 
 ## Development Tips
 
 - Always activate your `.venv` before running scripts.
-- On macOS, use `.venv/bin/mjpython` instead of `python`.
-- Keep large model `.zip` files inside their scene’s `/policies` folder.
-- The `renders` folder contains OS-specific scripts labeled `_mac` or default for CUDA/x86.
+- macOS users **must** use `mjpython` for rendering; Windows/Linux use `python`.
+- All runtime parameters are now controlled in `config/render_run.yaml`.
+- You can switch to any other scene by updating the YAML paths — no code changes required.
+- Large `.zip` policy files should remain inside their scene’s `/policies` folder.
 
 ---
 
-## Troubleshooting & Common Issues
+## Troubleshooting
 
 ### `ModuleNotFoundError: No module named 'scenes'`
 
-This occurs when Python cannot find the project root. Fix by setting `PYTHONPATH`:
+Set your Python path manually:
 
 ```bash
 export PYTHONPATH=$(pwd)
 ```
 
-Then rerun your command.
-
 ### `RuntimeError: launch_passive requires mjpython`
 
-This happens if you use `python` instead of `mjpython` on macOS.
-Always run visualization scripts with:
+Use `mjpython` instead of `python` on macOS:
 
 ```bash
-.venv/bin/mjpython renders/render_demo_mac.py ...
+.venv/bin/mjpython renders/render_demo_mac.py --config config/render_run.yaml
 ```
 
-### Slow training performance
+### Policy not found
 
-If training is slower than expected:
-
-- Reduce parallel environments in `arm_train_mac.py` if memory is limited.
-- Verify all CPU cores are being utilized (`os.cpu_count()` output).
-- Use smaller timesteps for testing (`total_timesteps = 300000`).
-
-### Viewer crashes or freezes
-
-- Close other MuJoCo windows before opening a new one.
-- Lower refresh rate (e.g., `time.sleep(1/60)` instead of `1/120`).
-
-### Policy file not found
-
-Make sure your policy `.zip` file exists at:
+Ensure your trained PPO policy exists at:
 
 ```
-scenes/industrial_arm_reaching/policies/
+scenes/<scene_name>/policies/<policy_name>.zip
 ```
 
-Otherwise, download or retrain it before running demos.
+### Viewer closes instantly
+
+Check your model XML path in `config/render_run.yaml` — MuJoCo closes the window immediately if the model fails to load.
 
 ---
 
-## Team Collaboration
+## Collaboration
 
 - **Mentor Meetings:** Thursdays, 4:30–5:30 PM
 - **Sponsor Meetings:** Biweekly Tuesdays, 2:00–3:30 PM
 - **Capstone Lectures:** Fridays, 12:45–3:15 PM
 
-### Communication Tools
+**Tools:**
 
-- **Task Tracking:** GitHub Projects / Issues
-- **Documentation:** Google Docs, Markdown, Microsoft Office
-- **Version Control:** Git + GitHub with branching strategy
-- **Workflow:** Pull request reviews and feature branches
+- GitHub Projects & Issues for task tracking
+- Google Docs and Markdown for documentation
+- Lucidchart for diagrams
+- Pull requests and feature branches for version control
 
 ---
 
-## Project Standards
+## Coding & Documentation Standards
 
-### Documentation Standards
-
-- Markdown for all technical docs
-- Word and PowerPoint for formal deliverables
-- Lucidchart / Draw.io for diagrams
-- Consistent folder naming and structure
-
-### Coding Standards
-
-- Follow PEP8 Python conventions
-- Clean, commented, and modular code
-- Responsive and readable HTML/CSS
-
-### Communication Standards
-
-- Professional and prompt communication
-- Meeting minutes distributed within 24 hours
-- Clear task ownership and follow-ups
+- Follows **PEP8** Python style guidelines
+- Code is modular, well-commented, and reproducible
+- Technical docs use Markdown (`.md`); presentations use PowerPoint or Google Slides
+- All diagrams and charts use clear labels and consistent formatting
 
 ---
 
 ## License
 
-This project was developed for academic purposes as part of the NAU Computer Science Capstone program.
-All rights reserved by the development team and Northern Arizona University.
+This project was developed for academic purposes as part of the **NAU Computer Science Capstone Program (2024–2025)**.
+All rights reserved by the REACH development team and **Northern Arizona University**.
 
 ---
 
