@@ -62,16 +62,20 @@ def main():
     episodes = int(run.get("episodes", 10))
     max_seconds = float(run.get("max_seconds_per_ep", 30.0))
     deterministic = bool(run.get("deterministic", True))
+    disable_logging = bool(run.get("disable_logging", False))
 
     # Import environment class
     EnvClass = import_env(env_class_path)
 
-    # Instantiate environment
+    # Instantiate environment (try model_path with disable_logging; fallback to old signature)
     try:
-        env = EnvClass(model_path=model_xml, render_mode="human")
+        env = EnvClass(model_path=model_xml, render_mode="human", disable_logging=disable_logging)
     except TypeError:
-        # Fallback for envs without model_path arg
-        env = EnvClass(render_mode="human")
+        try:
+            env = EnvClass(model_path=model_xml, render_mode="human")
+        except TypeError:
+            # Fallback for envs without model_path arg
+            env = EnvClass(render_mode="human")
 
     # Load PPO model
     model = PPO.load(policy_path, env=env)
