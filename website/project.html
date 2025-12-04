@@ -60,6 +60,28 @@
         <p class="lead">Complete project overview, solution, technologies, and timeline.</p>
       </div>
     </div>
+    
+    <!-- Project Overview -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <h3>Project Overview</h3>
+            <p>
+              The REACH project is developing a simulation-based reinforcement learning framework that trains a wearable
+              robotic arm to perform everyday upper-limb tasks in a safe, repeatable virtual environment before deployment
+              on hardware. By learning in simulation first, the system can explore many control strategies, reduce risk to
+              participants and equipment, and ultimately provide smoother, more responsive, and energy-efficient assistance
+              for stroke survivors and others with upper-limb impairments.
+            </p>
+            <p>
+              <strong>Original Project Proposal:</strong> 
+              <a href="https://www.ceias.nau.edu/cs/CS_Capstone/Projects/F25/20.RoboticArm_Lerner.pdf" target="_blank">View the initial concept provided by our sponsor</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Problem Statement -->
     <div class="row mb-4">
@@ -68,35 +90,19 @@
           <div class="card-body">
             <h3>The Problem</h3>
             <p class="lead">
-              The overall problem that REACH is in charge of is that robotic arms aren't designed well enough to 
-              handle the complexity of a regular human limb
+              The overall problem that REACH aims to solve is the developmental pains of prototyping and testing assistive robotic devices.
             </p>
             <p>
-              Some context to this problem is that robotic arms are too rigid: 
-              they use hardcoded movements that break down in dynamic environments and that 
-              there isnt an anything out there that addresses this issue in its real-world use.
-              - Impact on the sponsor's business
+              Current rehabilitation robotics research at NAU faces a significant bottleneck in control
+system development. Modern assistive devices often rely on rigid, preprogrammed
+control schemes that cannot easily adapt to dynamic, real-world human movement.
+Because the learning and testing of new control algorithms occur primarily on physical
+prototypes, each experimental iteration is slow, labor-intensive, and sometimes risky.
+Without a robust simulation-based learning platform, progress in developing natural,
+responsive, and safe robotic behaviors is limited by both hardware constraints and
+human resource availability.
             </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Project Overview -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-body">
-            <h3>Project Overview</h3>
-            <p>
-              The solution that REACH has come up with for this is problem is the creation of a simluation-based 
-              reinforced-learning framework, which is expected to allow a robotic arm to learn and later assist
-              with daily task, while being smooth, responsive, and have energy-efficient assistance.
-            </p>
-            <p>
-              <strong>Original Project Proposal:</strong> 
-              <a href="https://www.ceias.nau.edu/cs/CS_Capstone/Projects/F25/20.RoboticArm_Lerner.pdf" target="_blank">View the initial concept provided by our sponsor</a>
-            </p>
+            
           </div>
         </div>
       </div>
@@ -108,11 +114,11 @@
         <div class="card">
           <div class="card-body">
             <h3>High-Level Requirements</h3>
-            <p>for this project, a few requirements are needed:</p>
+            <p>For this project, our high-level requirements reflect the MUST-have functional requirements defined in our specification:</p>
             <ul>
-              <li>A physical data simulator</li>
-              <li>An RL framework</li>
-              <li>A robotic arm for testing the framework</li>
+              <li>A complete researcher interface that allows graduate students to run the full experiment workflow using Jupyter notebooks and YAML configuration files, without modifying core source code.</li>
+              <li>A physics-accurate MuJoCo simulation environment with a waist-mounted robotic arm model, sensor simulation, basic reaching tasks, and gesture recognition and response capabilities configured through YAML.</li>
+              <li>A reinforcement learning training loop that supports PPO and SAC with Stable-Baselines3, runs on both local machines and Monsoon HPC, logs metrics, saves and resumes checkpoints, and is fully driven by configuration files.</li>
             </ul>
           </div>
         </div>
@@ -126,13 +132,11 @@
           <div class="card-body">
             <h3>Technical Solution</h3>
             <p class="lead">
-              Our techinal solution is the creation of a sim-base, reinforced-learning framework.
+              REACH is a simulation-first reinforcement learning framework that accelerates the design and testing of upper-limb assistive robotic behaviors before they are deployed to real devices.
             </p>
             <p>
-              This framework allows for the robotic arm to learn from its actions and self-improve while
-              giving assistance to those that have upper limb disabilities. This will also use YOLO, a camere, to detect
-              and operate with visual data within its environment.
-            </p>
+              The framework centers on a configurable virtual environment where an assistive robotic arm interacts with a simulated human partner using gesture recognition and response to practice cooperative upper-limb movements. Around this core, we provide flexible experiment configuration, scripted training workflows, and rich visual feedback so researchers can iterate on task goals, rewards, and motion strategies without modifying low-level control code. As the project matures, the same framework will be used to explore more complex rehabilitation and daily-living tasks, serving as a safe proving ground for assistive behaviors that will ultimately transfer to the physical hardware being developed with our Mechanical and Electrical Engineering collaborators.
+            </p>                     
           </div>
         </div>
       </div>
@@ -194,55 +198,114 @@
             <h3>Technologies & Tools</h3>
             <div class="row">
               <div class="col-md-6 mb-3">
-                <div class="card tech-card">
+                <div class="card tech-card h-100">
                   <div class="card-body">
                     <h5 class="card-title">Python</h5>
                     <p class="card-text">
-                      <strong>Why we chose it:</strong> The reason why this language was chosen was it was the recommended language we'd
-                       use by the clients in order to accomplished the framework for this project.
+                      <strong>Why we chose it:</strong> Python offers a mature ecosystem for reinforcement learning, scientific computing, and research tooling, which lets us move quickly while keeping the code accessible to our collaborators.
                     </p>
                     <p class="card-text">
-                      <strong>Role in project:</strong> Python's role in this project is to be used in making a framework with reinforced-learning 
-                      in order to later help operate a robotic arm which is attached at the waist.
+                      <strong>Role in project:</strong> Python is the primary language for our simulation environments, training workflow, configuration system, and analysis notebooks, tying the full REACH framework together for upper-limb assistive robotics.
                     </p>
                   </div>
                 </div>
               </div>
-              <div class="col-md-6 mb-3" style="display:none">
-                <div class="card tech-card">
+              <div class="col-md-6 mb-3">
+                <div class="card tech-card h-100">
                   <div class="card-body">
-                    <h5 class="card-title">[Framework 1]</h5>
+                    <h5 class="card-title">RL Stack (SB3 + PyTorch)</h5>
                     <p class="card-text">
-                      <strong>Purpose:</strong> To act and move like a human arm through trial and error.
+                      <strong>Why we chose it:</strong> Stable-Baselines3 and PyTorch provide reliable, well-tested implementations of modern reinforcement learning algorithms that are widely used in research and easy to extend.
                     </p>
                     <p class="card-text">
-                      <strong>Usage:</strong> To help lose with upper limb disabilities.
+                      <strong>Role in project:</strong> This stack powers the training loop for REACH, optimizing policies, managing checkpoints, and supporting algorithms like PPO and SAC for gesture and assistive-task learning.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
             <div class="row">
-              <div class="col-md-4">
-                <h5>Development Tools</h5>
-                <ul>
-                  <li><strong>MuJoCo:</strong> We use MuJoCo so that we can get physical data based on the desired outcome of the robotic arm for the framework.</li>
-                  <li><strong>GitHub:</strong> GitHub is our repository management approach for this project.</li>
-                </ul>
+              <div class="col-md-6 mb-3">
+                <div class="card tech-card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">MuJoCo Simulation</h5>
+                    <p class="card-text">
+                      <strong>Why we chose it:</strong> MuJoCo is a high-precision physics engine designed for robotics and control, making it well-suited for simulating upper-limb assistive devices and human interaction.
+                    </p>
+                    <p class="card-text">
+                      <strong>Role in project:</strong> MuJoCo models the robotic arm, human, and environment so we can safely prototype tasks, test control strategies, and generate training data before running on real hardware.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div class="col-md-4" style="display:none">
-                <h5>Database & Storage</h5>
-                <ul>
-                  <li><strong>TBD:</strong> TBD</li>
-                  <li><strong>TBD:</strong> TBD</li>
-                </ul>
+              <div class="col-md-6 mb-3">
+                <div class="card tech-card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">Gymnasium Environments</h5>
+                    <p class="card-text">
+                      <strong>Why we chose it:</strong> Gymnasium provides a standard interface for reinforcement learning environments, which keeps our tasks compatible with common RL libraries and tooling.
+                    </p>
+                    <p class="card-text">
+                      <strong>Role in project:</strong> Our simulation tasks implement the Gymnasium API so that training scripts, evaluation tools, and future environments can plug into the REACH framework consistently.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div class="col-md-4" style="display:none">
-                <h5>Deployment</h5>
-                <ul>
-                  <li><strong>TBD:</strong> TBD</li>
-                  <li><strong>TBD:</strong> TBD</li>
-                </ul>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="card tech-card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">Jupyter & YAML Config</h5>
+                    <p class="card-text">
+                      <strong>Why we chose it:</strong> Jupyter notebooks and human-readable YAML files make it easy for researchers to control experiments, document workflows, and share configurations without editing source code.
+                    </p>
+                    <p class="card-text">
+                      <strong>Role in project:</strong> All major workflows—environment inspection, training, evaluation, and analysis—are driven through notebooks and configuration files, enabling reproducible experiments and rapid iteration.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="card tech-card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">Vision & Gesture Recognition</h5>
+                    <p class="card-text">
+                      <strong>Why we chose it:</strong> Modern computer vision techniques are needed to detect human hands and objects accurately enough for meaningful gesture-based interaction.
+                    </p>
+                    <p class="card-text">
+                      <strong>Role in project:</strong> Our vision pipeline processes simulated camera feeds to localize the user’s hand and other key features, feeding gesture information into the control policies that drive assistive motions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="card tech-card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">Monsoon HPC & SLURM</h5>
+                    <p class="card-text">
+                      <strong>Why we chose it:</strong> Training rich reinforcement learning policies can be computationally expensive, so we leverage NAU’s Monsoon cluster and SLURM scheduler for scalable experiments.
+                    </p>
+                    <p class="card-text">
+                      <strong>Role in project:</strong> Our training scripts can be launched locally or as SLURM jobs on Monsoon, allowing longer runs, parallel environments, and hyperparameter sweeps using the same configuration-driven workflow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="card tech-card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">GitHub & Collaboration</h5>
+                    <p class="card-text">
+                      <strong>Why we chose it:</strong> GitHub is a widely adopted platform for source control, code review, and team collaboration, which aligns well with our need to coordinate work across students, mentors, and sponsors.
+                    </p>
+                    <p class="card-text">
+                      <strong>Role in project:</strong> GitHub hosts the REACH codebase, tracks issues and feature requests, manages pull requests and reviews, and serves as the central hub for documentation and release artifacts.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -250,8 +313,8 @@
       </div>
     </div>
 
-    <!-- Project Timeline CURRENTLY HIDDEN -->
-    <div class="row mb-4" style="display:none">
+    <!-- Project Timeline -->
+    <div class="row mb-4">
       <div class="col-12">
         <div class="card">
           <div class="card-body">
@@ -259,93 +322,64 @@
             <div class="row mb-3">
               <div class="col-md-4">
                 <div class="text-center">
-                  <h4 class="text-primary">TBD</h4>
-                  <p class="text-muted">Current development phase</p>
+                  <h4 class="text-primary">Vision & Gesture Loop</h4>
+                  <p class="text-muted">Current development phase (Dec 2025)</p>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="text-center">
-                  <h4 class="text-success">TBD</h4>
-                  <p class="text-muted">Overall project completion</p>
+                  <h4 class="text-success">May 2026</h4>
+                  <p class="text-muted">Overall project completion target</p>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="text-center">
-                  <h4 class="text-info">TBD</h4>
+                  <h4 class="text-info">~5 months</h4>
                   <p class="text-muted">Time until project completion</p>
                 </div>
               </div>
             </div>
             <div class="timeline-item">
-              <h5>Phase 1: Project Planning & Requirements</h5>
-              <p class="text-muted">TBD</p>
-              <p>TBD</p>
+              <h5>Phase 1: Simulation Foundations (Complete)</h5>
+              <p class="text-muted">Aug – Sep 2025</p>
+              <p>MuJoCo arm model, Gymnasium environment, reward shaping, and baseline reaching behaviors implemented and validated in simulation.</p>
             </div>
             <div class="timeline-item">
-              <h5>Phase 2: System Design & Architecture</h5>
-              <p class="text-muted">TBD</p>
-              <p>TBD</p>
+              <h5>Phase 2: Training Infrastructure (Complete)</h5>
+              <p class="text-muted">Oct – Nov 2025</p>
+              <p>PPO training wrapper, Monsoon SLURM pipeline, long-horizon training runs to 1M timesteps, and TensorBoard-based monitoring brought online.</p>
             </div>
             <div class="timeline-item">
-              <h5>Phase 3: Core Development</h5>
-              <p class="text-muted">TBD</p>
-              <p>TBD</p>
+              <h5>Phase 3: Vision & Gesture Loop (In Progress)</h5>
+              <p class="text-muted">Dec 2025 – Feb 2026</p>
+              <p>End-to-end loop for gesture recognition and response, including simulated camera feeds, gesture classification, and closed-loop policy training.</p>
             </div>
             <div class="timeline-item">
-              <h5>Phase 4: Testing & Integration</h5>
-              <p class="text-muted">TBD</p>
-              <p>TBD</p>
+              <h5>Phase 4: Hardware Integration (Planned)</h5>
+              <p class="text-muted">Mar – Apr 2026</p>
+              <p>Integrate the learned policies with the physical robotic arm and perform simulation-to-real transfer testing in collaboration with the Biomechatronics Lab.</p>
             </div>
             <div class="timeline-item">
-              <h5>Phase 5: Deployment & Documentation</h5>
-              <p class="text-muted">TBD</p>
-              <p>TBD</p>
+              <h5>Phase 5: Testing & Deployment (Planned)</h5>
+              <p class="text-muted">Apr – May 2026</p>
+              <p>Comprehensive testing, performance tuning, documentation, and final handoff of the REACH framework and artifacts to the Biomechatronics Lab.</p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Key Milestones CURRENTLY HIDDEN -->
-    <div class="row mb-4" style="display:none">
+    <!-- Screenshots/Demo -->
+    <div class="row">
       <div class="col-12">
         <div class="card">
           <div class="card-body">
-            <h3>Key Milestones & Deliverables</h3>
-            <div class="row">
-              <div class="col-md-6">
-                <h5>Completed Milestones</h5>
-                <ul>
-                  <li><strong>TBD:</strong> TBD</li>
-                  <li><strong>TBD:</strong> TBD</li>
-                  <li><strong>TBD:</strong> TBD</li>
-                </ul>
-              </div>
-              <div class="col-md-6">
-                <h5>Upcoming Milestones</h5>
-                <ul>
-                  <li><strong>TBD:</strong> TBD</li>
-                  <li><strong>TBD:</strong> TBD</li>
-                  <li><strong>TBD:</strong> TBD</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Screenshots/Demo CURRENTLY HIDDEN -->
-    <div class="row" style="display:none">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-body">
-            <h3>Product Screenshots</h3>
-            <p>TBD</p>
-            <div class="placeholder">
-              <h4>Screenshot Walkthrough</h4>
-              <p>TBD</p>
-            </div>
+            <h3>Demo of Current Progress</h3>
+            <p class="mb-3">Current MuJoCo reacher arm simulation demonstrating our baseline upper-limb assistive control behavior.</p>
+            <video class="img-fluid rounded border" autoplay muted loop playsinline>
+              <source src="./assets/reacher_arm_demo.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
       </div>
@@ -355,10 +389,15 @@
   <!-- Footer -->
   <footer class="bg-dark text-light mt-5 py-4">
     <div class="container text-center">
-      <p class="mb-0">&copy; 2026 REACH Capstone Project. All rights reserved.</p>
+      <p class="mb-1">&copy; 2025 REACH Capstone Project. All rights reserved.</p>
+      <p class="mb-0">
+        See our code <a href="https://github.com/lucaslarson25/reach" target="_blank" 
+        rel="noopener noreferrer" style="color: #ffffff; text-decoration: underline;">here</a>.
+      </p>
     </div>
   </footer>
 
-  <script src="bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS (local) -->
+  <script src="./assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
