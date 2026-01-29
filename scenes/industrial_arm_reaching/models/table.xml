@@ -1,0 +1,24 @@
+<mujoco model="table">
+
+    <worldbody>
+
+        <!-- Floor -->
+        <geom type="plane" size="5 5 0.1" rgba="0.9 0.9 0.9 1"/>
+
+        <!-- Table -->
+        <body name="table" pos="0 0 0" mocap="true">
+            <geom name="top"
+                  type="box"
+                  pos="0 0 0.75"
+                  size="0.6 0.6 0.05"
+                  rgba="0.6 0.4 0.3 1"/>
+
+            <geom name="leg1" type="box" pos=" 0.55  0.55 0.35" size="0.05 0.05 0.35"/>
+            <geom name="leg2" type="box" pos="-0.55  0.55 0.35" size="0.05 0.05 0.35"/>
+            <geom name="leg3" type="box" pos=" 0.55 -0.55 0.35" size="0.05 0.05 0.35"/>
+            <geom name="leg4" type="box" pos="-0.55 -0.55 0.35" size="0.05 0.05 0.35"/>
+        </body>
+
+    </worldbody>
+
+</mujoco>
