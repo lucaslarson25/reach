@@ -1,5 +1,0 @@
-<mujoco model="z1_reach_scene">
-  <include file="floor.xml"/>
-  <include file="ball.xml"/>
-  <include file="z1_arm.xml"/>
-</mujoco>
