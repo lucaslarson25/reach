@@ -50,4 +50,4 @@ include = ["config", "envs", "renders", "scenes", "scenes.*"]
 exclude = ["documentation*", "website*", "notebooks*", "demos*"]
 
 [tool.setuptools.package-data]
-scenes = ["**/*.xml", "**/*.zip", "**/*.stl", "**/*.yaml"]
+scenes = ["**/*.xml", "**/*.zip", "**/*.stl", "**/*.STL", "**/*.yaml"]
