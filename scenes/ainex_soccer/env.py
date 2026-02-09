@@ -236,6 +236,9 @@ class AINexReachEnv(gym.Env):
         ball_pos = self.data.xpos[self._ball_body_id]
         return np.concatenate([self.data.qpos, self.data.qvel, grip_pos, ball_pos]).astype(np.float32)
 
+    def get_end_effector_pos(self) -> np.ndarray:
+        return self.data.site_xpos[self._gripper_site_id].copy()
+
     def _apply_keyframe(self, key_name: str) -> bool:
         try:
             key = self.model.key(key_name)
@@ -339,10 +342,15 @@ class AINexReachEnv(gym.Env):
         action_delta = float(np.linalg.norm(self._prev_action - action))
         reward = 1.5 * (1.0 / (1.0 + 10.0 * dist)) - 0.05 * action_delta
 
-        terminated = dist < 0.05
+        success = dist < 0.05
+        terminated = success
         truncated = self.step_count >= self.max_steps
 
-        return self._get_obs(), float(reward), bool(terminated), bool(truncated), {"terminated": bool(terminated)}
+        return self._get_obs(), float(reward), bool(terminated), bool(truncated), {
+            "terminated": bool(terminated),
+            "is_success": bool(success),
+            "distance": dist,
+        }
 
     def render(self):
         if self.render_mode == "human":

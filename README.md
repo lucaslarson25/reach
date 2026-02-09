@@ -62,9 +62,12 @@ The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 
 reach/
 ├── README.md
 ├── requirements.txt
+├── pyproject.toml               # Packaging + CLI entry points
 │
 ├── config/
 │   ├── render_run.yaml          # Defines scene, model, policy, and runtime settings
+│   ├── ainex_render.yaml        # AINex stand config
+│   ├── ainex_reach.yaml         # AINex reach config
 │   └── render_loader.py         # Helper for reading and validating YAML configs
 │
 ├── documentation/
@@ -72,6 +75,10 @@ reach/
 │   ├── headshots/
 │   ├── logos/
 │   └── *.pdf
+│   └── system_design.md         # Architecture, assumptions, limitations
+│
+├── envs/                        # Shared environments
+│   └── mujoco_arm_env.py
 │
 ├── renders/                     # Rendering and visualization scripts
 │   ├── render_demo.py           # x86 / CUDA policy renderer
@@ -80,6 +87,11 @@ reach/
 │   └── render_model_mac.py      # macOS model viewer (uses mjpython)
 │
 ├── scenes/
+│   ├── ainex_soccer/             # AINex humanoid scene + training
+│   │   ├── env.py
+│   │   ├── models/
+│   │   ├── policies/
+│   │   └── training/
 │   ├── industrial_arm_reaching/
 │   │   ├── env.py
 │   │   ├── models/
@@ -87,6 +99,8 @@ reach/
 │   │   └── training/
 │   ├── cartpole/
 │   └── industrial_arm_reaching_with_welding/
+│
+├── logs/                        # Generated training/eval logs
 │
 ├── website/
 │   ├── index.html
@@ -97,6 +111,12 @@ reach/
 │
 └── .venv/                       # Virtual environment (ignored by Git)
 ```
+
+---
+
+## System Design and Limitations
+
+See `documentation/system_design.md` for architecture, assumptions, limitations, and sim-to-real risks.
 
 ---
 
@@ -167,6 +187,36 @@ Edit the following fields:
 - `scene.model_xml`: Path to the MuJoCo XML model
 - `policy.path`: Path to the trained PPO policy `.zip`
 - `run.*`: Adjust runtime parameters like episode count or duration
+
+---
+
+## AINex Humanoid (Reach + Stand)
+
+### Train AINex reach policy (metrics + seed)
+
+```bash
+.venv/bin/python scenes/ainex_soccer/training/ainex_reach_train.py --seed 42 --timesteps 1500000
+```
+
+Logs are written to:
+- `logs/ainex_reach/monitor.csv`
+- `logs/ainex_reach/episode_metrics.csv`
+
+### Evaluate AINex reach policy (render + trajectories)
+
+```bash
+.venv/bin/mjpython scenes/ainex_soccer/training/ainex_reach_eval.py --config config/ainex_reach.yaml --episodes 5 --deterministic
+```
+
+Trajectory outputs:
+- `logs/trajectories/*.csv`
+- `logs/trajectories/*.png`
+
+### Render AINex stand policy
+
+```bash
+.venv/bin/mjpython renders/render_demo_mac.py --config config/ainex_render.yaml
+```
 
 ---
 
