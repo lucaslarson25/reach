@@ -54,7 +54,7 @@ def show_model(xml_path: str) -> None:
     print("Opening MuJoCo viewer — press ESC or close the window to exit.")
 
     # Standard blocking viewer (good for Linux/Windows/x86)
-    with mujoco.viewer.launch(model, data) as viewer:
+    with mujoco.viewer.launch_passive(model, data) as viewer:
         try:
             while viewer.is_running():
                 mujoco.mj_step(model, data)
