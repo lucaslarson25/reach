@@ -140,7 +140,7 @@ def main():
 
     # Launch standard blocking viewer
     if getattr(env, "viewer", None) is None:
-        env.viewer = mujoco.viewer.launch(env.model, env.data)
+        env.viewer = mujoco.viewer.launch_passive(env.model, env.data)
 
     try:
         for ep in range(episodes):
