@@ -9,4 +9,3 @@ run:
   episodes: 5
   max_seconds_per_ep: 20.0
   deterministic: true
-  trace: true
