@@ -1,0 +1,19 @@
+US-1: As a user, I want to launch a simulated environment so that I can observe a system operating in a virtual setting.
+
+python .\renders\render_model.py --config .\config\ainex_reach.yaml
+
+US-2: As a user, I want the robot to execute basic joint movements so that I can verify control and kinematics
+
+python .\renders\render_model.py --config .\config\ainex_reach.yaml
+Control 13 - forward
+
+US-3: As a researcher, I want to train a reinforcement learning agent on a simple reaching task so that I can confirm the learning pipeline works end-to-end.
+
+python -m scenes.ainex_soccer.training.ainex_reach_train
+python .\renders\render_demo.py --config .\config\ainex_reach.yaml
+
+US-4: As a developer, I want to visualize training and evaluation rollouts so that I can validate agent behavior qualitatively.
+
+python -m scenes.ainex_soccer.training.ainex_reach_train
+python .\renders\render_demo.py --config .\config\ainex_reach.yaml
+python .\plot_ainex_episode_metrics.py
