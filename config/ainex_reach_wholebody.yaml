@@ -1,0 +1,12 @@
+scene:
+  env_class: scenes.ainex_soccer.env:AINexWalkToBallEnv
+  model_xml: scenes/ainex_soccer/models/ainex_stable.xml
+
+policy:
+  path: scenes/ainex_soccer/policies/ppo_ainex_walk_to_ball.zip
+
+run:
+  episodes: 5
+  max_seconds_per_ep: 20.0
+  deterministic: true
+  trace: true

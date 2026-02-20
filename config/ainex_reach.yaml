@@ -6,6 +6,7 @@ policy:
   path: scenes/ainex_soccer/policies/ppo_ainex_reach.zip
 
 run:
-  episodes: 10
-  max_seconds_per_ep: 30.0
+  episodes: 5
+  max_seconds_per_ep: 20.0
   deterministic: true
+  trace: true

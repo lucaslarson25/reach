@@ -8,14 +8,13 @@ import mujoco.viewer
 import csv
 
 
-class Z1ReachEnv(gym.Env):
+class Z1WeldingEnv(gym.Env):
     metadata = {"render_modes": ["human"], "render_fps": 60}
 
     def __init__(self, render_mode=None, model_path: str | None = None, metrics_csv_path: str | None = None, disable_logging: bool = False):
         """
-        Minimal migration:
+        Welding environment with torch alignment tracking.
         - new optional `model_path`. If None, use the scene's default z1scene.xml
-        - keep everything else the same
         - new optional `metrics_csv_path`. If None, defaults to logs/episode_metrics.csv
         - new optional `disable_logging`. If True, disables CSV logging (default: False)
         """
@@ -38,17 +37,17 @@ class Z1ReachEnv(gym.Env):
         n_act = self.model.nu
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(n_act,), dtype=np.float32)
 
-        # Observation: qpos + qvel + ee_pos (3) + ball_pos (3)
-        n_obs = self.model.nq + self.model.nv + 3 + 3
+        # Observation: qpos + qvel + ee_pos (3) + ball_pos (3) + torch_dir (3) + seam_dir (3)
+        n_obs = self.model.nq + self.model.nv + 3 + 3 + 3 + 3
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32)
 
         # Initialize CSV logging (enabled by default unless explicitly disabled)
         self.disable_logging = disable_logging
         if not disable_logging:
             if metrics_csv_path is None:
-                # Default to logs/episode_metrics.csv relative to project root
+                # Default to logs/episode_metrics_welding.csv relative to project root
                 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                metrics_csv_path = os.path.join(project_root, "logs", "episode_metrics.csv")
+                metrics_csv_path = os.path.join(project_root, "logs", "episode_metrics_welding.csv")
             self.metrics_csv_path = metrics_csv_path
         else:
             self.metrics_csv_path = None
@@ -56,20 +55,69 @@ class Z1ReachEnv(gym.Env):
         self._csv_initialized = False
 
     # ---------- helpers ----------
+    def _get_torch_site_id(self):
+        """Get torch site ID, with fallback to eetip if torch site doesn't exist."""
+        try:
+            return mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "torchtip")
+        except:
+            return mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
+
+    def _get_seam_body_id(self):
+        """Get seam/target body ID, with fallback to ball if seam doesn't exist."""
+        try:
+            return mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "seam")
+        except:
+            return mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+
     def _get_obs(self) -> np.ndarray:
         ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
         ee_pos = self.data.site_xpos[ee_id]
-        ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+        ball_id = self._get_seam_body_id()
         ball_pos = self.data.xpos[ball_id]
+        
+        # Torch direction (from torch site orientation)
+        torch_id = self._get_torch_site_id()
+        torch_xmat = self.data.site_xmat[torch_id].reshape(3, 3)
+        torch_dir = torch_xmat[:, 0]  # Forward direction of torch
+        
+        # Seam direction (normalized direction along seam, default to Z-up if not specified)
+        # In real welding, this would come from the seam geometry
+        seam_dir = np.array([0.0, 0.0, 1.0])  # Default: vertical seam
+        
         # Ensure float32 to avoid MPS float64 issues
-        return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos]).astype(np.float32)
+        return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos, torch_dir, seam_dir]).astype(np.float32)
 
     def _set_ball_random_pos(self):
         x = np.random.uniform(0.2, 0.3)
         y = np.random.uniform(0.2, 0.3) * np.random.choice([1, -1])
         z = 0.05
-        self.model.body("ball").pos[:] = [x, y, z]
+        seam_id = self._get_seam_body_id()
+        self.model.body(seam_id).pos[:] = [x, y, z]
         mujoco.mj_forward(self.model, self.data)
+
+    def _compute_torch_alignment(self):
+        """
+        Compute torch alignment metric: angle between torch direction and target/seam direction.
+        Returns cosine similarity (1.0 = perfect alignment, -1.0 = opposite).
+        """
+        torch_id = self._get_torch_site_id()
+        torch_xmat = self.data.site_xmat[torch_id].reshape(3, 3)
+        torch_dir = torch_xmat[:, 0]  # Forward direction of torch
+        
+        # Target direction: from torch tip to target/seam
+        torch_pos = self.data.site_xpos[torch_id]
+        seam_id = self._get_seam_body_id()
+        seam_pos = self.data.xpos[seam_id]
+        target_dir = seam_pos - torch_pos
+        target_norm = np.linalg.norm(target_dir)
+        if target_norm > 0:
+            target_dir = target_dir / target_norm
+        else:
+            target_dir = np.array([0.0, 0.0, -1.0])  # Default downward
+        
+        # Cosine of angle between torch direction and target direction
+        alignment = float(np.dot(torch_dir, target_dir))
+        return alignment
 
     # ---------- helpers ----------
     def _initialize_csv(self):
@@ -87,7 +135,8 @@ class Z1ReachEnv(gym.Env):
             with open(self.metrics_csv_path, 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(['episode', 'distance_avg', 'distance_final', 'orientation_avg', 
-                               'action_norm_avg', 'reward_sum', 'success'])
+                               'torch_alignment_avg', 'torch_alignment_final', 'action_norm_avg', 
+                               'reward_sum', 'success'])
         
         self._csv_initialized = True
     
@@ -106,6 +155,7 @@ class Z1ReachEnv(gym.Env):
         # Calculate averages
         distance_avg = metrics['distance_sum'] / steps
         orientation_avg = metrics['orientation_sum'] / steps
+        torch_alignment_avg = metrics['torch_alignment_sum'] / steps
         action_norm_avg = metrics['action_norm_sum'] / steps
         
         # Write to CSV
@@ -116,6 +166,8 @@ class Z1ReachEnv(gym.Env):
                 distance_avg,
                 metrics['distance_final'],
                 orientation_avg,
+                torch_alignment_avg,
+                metrics['torch_alignment_final'],
                 action_norm_avg,
                 metrics['reward_sum'],
                 int(metrics['success'])
@@ -132,6 +184,8 @@ class Z1ReachEnv(gym.Env):
             'distance_sum': 0.0,
             'distance_final': 0.0,
             'orientation_sum': 0.0,
+            'torch_alignment_sum': 0.0,
+            'torch_alignment_final': 0.0,
             'action_norm_sum': 0.0,
             'reward_sum': 0.0,
             'success': False
@@ -145,7 +199,7 @@ class Z1ReachEnv(gym.Env):
         # initialize previous distance
         ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
         ee_pos = self.data.site_xpos[ee_id]
-        ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+        ball_id = self._get_seam_body_id()
         ball_pos = self.data.xpos[ball_id]
         self.prev_dist = float(np.linalg.norm(ee_pos - ball_pos))
         self.step_count = 0
@@ -165,7 +219,7 @@ class Z1ReachEnv(gym.Env):
         # positions
         ee_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "eetip")
         ee_pos = self.data.site_xpos[ee_id]
-        ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+        ball_id = self._get_seam_body_id()
         ball_pos = self.data.xpos[ball_id]
         dist = float(np.linalg.norm(ee_pos - ball_pos))
 
@@ -185,9 +239,15 @@ class Z1ReachEnv(gym.Env):
             target_dir /= norm
         orientation_reward = float(np.dot(ee_dir, target_dir))
 
+        # Torch alignment metric (welding-specific)
+        torch_alignment = self._compute_torch_alignment()
+        
+        # Include torch alignment in reward (optional, can be tuned)
+        torch_alignment_reward = 0.3 * torch_alignment
+
         action_penalty = float(0.05 * np.sum(np.square(action)))
 
-        reward = 3.0 * dense_reward + 1.5 * progress + 0.45 * orientation_reward - action_penalty
+        reward = 3.0 * dense_reward + 1.5 * progress + 0.45 * orientation_reward + torch_alignment_reward - action_penalty
 
         success_threshold = 0.05
         terminated = dist < success_threshold
@@ -207,6 +267,8 @@ class Z1ReachEnv(gym.Env):
             self._episode_metrics['distance_sum'] += dist
             self._episode_metrics['distance_final'] = dist
             self._episode_metrics['orientation_sum'] += orientation_reward
+            self._episode_metrics['torch_alignment_sum'] += torch_alignment
+            self._episode_metrics['torch_alignment_final'] = torch_alignment
             action_norm = float(np.linalg.norm(action))
             self._episode_metrics['action_norm_sum'] += action_norm
             self._episode_metrics['reward_sum'] += reward
@@ -235,3 +297,4 @@ class Z1ReachEnv(gym.Env):
         if self.viewer is not None:
             self.viewer.close()
             self.viewer = None
+
