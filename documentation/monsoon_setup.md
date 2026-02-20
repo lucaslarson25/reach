@@ -96,15 +96,17 @@ git push -u origin monsoon
 
 ## 4. Set Up Python Environment on Monsoon
 
-Monsoon uses Linux; you need a Python environment with CUDA.
+Monsoon uses Linux; you need **Python 3.9+** (system Python may be older). Load Mambaforge first.
 
 ```bash
-cd ~/scratch/reach
+cd ~/reach
 
-# Load CUDA
+# Load CUDA and Python 3.9+ (required for numpy 1.26, mujoco 3, torch 2)
 module load cuda
+module load mambaforge
 
-# Create venv
+# Create venv using the module's Python
+deactivate 2>/dev/null || true
 python3 -m venv .venv
 source .venv/bin/activate
 
@@ -115,6 +117,8 @@ pip install -r requirements-hpc.txt
 # Verify
 python -c "import mujoco; import torch; print('CUDA:', torch.cuda.is_available())"
 ```
+
+If `module load mambaforge` fails, try `module avail python` and load a Python 3.9+ module.
 
 ---
 

@@ -25,6 +25,7 @@ mkdir -p logs
 
 # --- Environment ---
 module load cuda 2>/dev/null || true
+module load mambaforge 2>/dev/null || true
 if [ -d ".venv" ]; then
     source .venv/bin/activate
 else
