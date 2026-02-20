@@ -26,6 +26,7 @@ mkdir -p logs
 # --- Environment ---
 module load cuda 2>/dev/null || true
 module load mambaforge 2>/dev/null || true
+module load python/3.11.9 2>/dev/null || true
 if [ -d ".venv" ]; then
     source .venv/bin/activate
 else
@@ -34,6 +35,14 @@ else
 fi
 
 export PYTHONPATH="$REPO_ROOT:$PYTHONPATH"
+
+# --- Smoke test (quick sanity check before training) ---
+echo "Running smoke test..."
+if ! python -m tests.smoke_test; then
+    echo "ERROR: Smoke test failed. Fix environment before training."
+    exit 1
+fi
+echo ""
 
 # --- Run training ---
 echo "=== REACH Monsoon Training ==="
@@ -78,7 +87,10 @@ done
 
 if [ "$HAS_CHANGES" -eq 1 ]; then
     git commit -m "Monsoon: trained policies $(date +%Y-%m-%d)"
-    git push origin monsoon
+    if ! git push origin monsoon; then
+        echo "ERROR: git push failed (check SSH/HTTPS credentials on Monsoon)."
+        exit 1
+    fi
     echo "Pushed to origin monsoon."
 else
     echo "No policy changes to commit."

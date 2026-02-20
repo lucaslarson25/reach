@@ -56,6 +56,25 @@ The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 
 
 ---
 
+## AINex Soccer Assets (from [ainex_soccer](https://github.com/tjdavis51/ainex_soccer))
+
+This repo includes MuJoCo assets and action groups from the AINex Soccer project:
+
+- **assets/ainex/** – Robot meshes (STL), URDF, and MJCF models (`ainex_stable.xml`, `ainex_edited.urdf`)
+- **assets/action_groups/raw/** – Original hardware action groups (`.d6a` SQLite databases)
+- **assets/action_groups/csv/** – CSV exports of action groups (Servo1–Servo22 + timing)
+- **scripts/** – Viewers and replay tools (`view_ainex_stable.py`, `replay_actiongroup.py`, etc.)
+- **tools/** – Conversion utilities (`extract_actiongroup_to_csv.py`, `export_ainex_mjcf.py`)
+
+### Quick start (AINex Soccer scripts)
+
+```bash
+pip install mujoco numpy
+mjpython scripts/view_ainex_stable.py
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -64,13 +83,22 @@ reach/
 ├── requirements.txt
 ├── pyproject.toml               # Packaging + CLI entry points
 │
+├── assets/                     # AINex Soccer assets (meshes, action groups)
+│   ├── ainex/                  # Robot models, URDF, MJCF, meshes
+│   └── action_groups/          # raw (.d6a) and csv exports
 ├── config/
 │   ├── render_run.yaml          # Defines scene, model, policy, and runtime settings
 │   ├── ainex_render.yaml        # AINex stand config
 │   ├── ainex_reach.yaml         # AINex reach config
 │   └── render_loader.py         # Helper for reading and validating YAML configs
 │
+├── cluster/
+│   ├── train_monsoon.sh         # SLURM job for Monsoon HPC (auto-push on success)
+│   └── test_monsoon.sh          # Smoke test (local or Monsoon)
+├── tests/
+│   └── smoke_test.py            # Quick sanity check (imports, env, PPO)
 ├── documentation/
+│   ├── monsoon_setup.md         # Monsoon HPC setup and workflow
 │   ├── demos/
 │   ├── headshots/
 │   ├── logos/
@@ -80,7 +108,9 @@ reach/
 ├── envs/                        # Shared environments
 │   └── mujoco_arm_env.py
 │
-├── renders/                     # Rendering and visualization scripts
+├── scripts/                    # AINex Soccer viewers & replay (view_ainex_stable.py, etc.)
+├── tools/                      # AINex Soccer conversion tools (extract_actiongroup_to_csv.py)
+├── renders/                    # Rendering and visualization scripts
 │   ├── render_demo.py           # x86 / CUDA policy renderer
 │   ├── render_demo_mac.py       # macOS policy renderer (uses mjpython)
 │   ├── render_model.py          # x86 / CUDA model viewer
@@ -157,6 +187,14 @@ pip install -r requirements.txt
 python -c "import mujoco; import torch; print('Setup complete.')"
 ```
 
+### 5. Run smoke test (local or Monsoon)
+
+```bash
+python -m tests.smoke_test
+```
+
+Works headless (no display). On Monsoon, use `./cluster/test_monsoon.sh` or `sbatch cluster/test_monsoon.sh`.
+
 ---
 
 ## YAML Configuration
@@ -217,6 +255,44 @@ Trajectory outputs:
 ```bash
 .venv/bin/mjpython renders/render_demo_mac.py --config config/ainex_render.yaml
 ```
+
+### Train AINex walk-to-ball (walk around table + reach)
+
+Uses **action groups** for leg walking (from `assets/action_groups/csv/`) and **IMU-like observations** (torso orientation, angular/linear velocity) for balance. Policy controls the right arm for reaching.
+
+```bash
+.venv/bin/python scenes/ainex_soccer/training/ainex_walk_to_ball_train.py --seed 42 --timesteps 1000000
+```
+
+### Evaluate walk-to-ball policy
+
+```bash
+.venv/bin/mjpython scenes/ainex_soccer/training/ainex_walk_to_ball_eval.py --config config/ainex_walk_to_ball.yaml --episodes 5 --deterministic
+```
+
+---
+
+## Training on NAU Monsoon HPC
+
+For long overnight training runs, use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/).
+
+### Quick start (submit and leave)
+
+```bash
+cd /scratch/YOUR_ID/reach   # or your repo path
+sbatch cluster/train_monsoon.sh
+```
+
+The job runs in the background; you can disconnect. On success, policies are pushed to `origin monsoon`.
+
+### Full workflow
+
+1. **Connect:** `ssh [NAU_ID]@monsoon.hpc.nau.edu` (or use [OnDemand](https://ondemand.hpc.nau.edu/))
+2. **Clone, setup:** See `documentation/monsoon_setup.md` for full instructions
+3. **Submit job:** `sbatch cluster/train_monsoon.sh`
+4. **Monitor (optional):** `squeue -u $USER` and `tail -f logs/monsoon_<JOBID>.out`
+5. **On success:** Policies are pushed to the `monsoon` branch
+6. **Team pull:** `git checkout monsoon && git pull` then run simulations locally
 
 ---
 

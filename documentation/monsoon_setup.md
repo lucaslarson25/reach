@@ -122,7 +122,30 @@ If `module load mambaforge` fails, try `module avail python` and load a Python 3
 
 ---
 
-## 5. Submit Training Job
+## 5. Run Tests (Local or Monsoon)
+
+The same smoke test runs whether you're on your laptop or Monsoon:
+
+```bash
+# From repo root, with venv activated
+python -m tests.smoke_test
+```
+
+On Monsoon, you can also run the test script (loads modules and venv):
+
+```bash
+./cluster/test_monsoon.sh
+```
+
+Or submit as a short SLURM job:
+
+```bash
+sbatch cluster/test_monsoon.sh
+```
+
+---
+
+## 6. Submit Training Job
 
 **Run from the repo root** (so the job finds the repo):
 
@@ -157,21 +180,22 @@ tail -f logs/monsoon_<JOBID>.out
 
 ---
 
-## 6. What Happens After Training
+## 7. What Happens After Training
 
 The `train_monsoon.sh` script:
 
-1. Runs the training script
-2. If training succeeds (exit 0):
+1. Runs a smoke test (quick sanity check)
+2. Runs the training script
+3. If training succeeds (exit 0):
    - Commits new/updated policy files
-   - Pushes to `origin monsoon`
-3. If training fails: no push; logs remain for debugging
+   - Pushes to `origin monsoon` (exits with error if push fails)
+4. If training fails: no push; logs remain for debugging
 
 ---
 
-## 7. Team Pull and Run
+## 8. Team Pull and Run
 
-Once the job has pushed successfully:
+Once the job has pushed successfully (training completed without error):
 
 ```bash
 # On your laptop
