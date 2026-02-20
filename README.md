@@ -256,6 +256,15 @@ Check your model XML path in `config/render_run.yaml` — MuJoCo closes the wind
 
 ---
 
+## Branching Strategy
+
+- **`dev`** – Integration branch. Feature branches (ainex, vdev, tdev, etc.) merge here to iron out bugs before going to main.
+- **`main`** – Production-ready code only. Merge from `dev` when fully tested and functional.
+
+**Flow:** feature branch → `dev` (test, fix) → `main`
+
+---
+
 ## Collaboration
 
 - **Mentor Meetings:** Thursdays, 4:30–5:30 PM
