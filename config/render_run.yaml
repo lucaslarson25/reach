@@ -1,9 +1,9 @@
 scene:
-  env_class: scenes.industrial_arm_reaching.env:Z1ReachEnv
-  model_xml: scenes/industrial_arm_reaching/models/z1scene.xml
+  env_class: scenes.ainex_soccer.env:AINexReachEnv
+  model_xml: scenes/ainex_soccer/models/ainex_stable.xml
 
 policy:
-  path: scenes/industrial_arm_reaching/policies/ppo_z1_parallel_1.5m_best.zip
+  path: scenes/ainex_soccer/policies/ppo_ainex_reach.zip
 
 run:
   episodes: 10

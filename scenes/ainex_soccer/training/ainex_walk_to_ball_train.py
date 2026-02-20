@@ -1,3 +1,7 @@
+"""
+Train PPO for AINex walk-to-ball: robot walks around the table to get closer
+to the ball, then reaches with the arm. Whole-body control (legs + arms).
+"""
 import os
 import argparse
 import csv
@@ -8,12 +12,12 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
 from stable_baselines3.common.callbacks import ProgressBarCallback, CallbackList, BaseCallback
 from stable_baselines3.common.utils import set_random_seed
-from scenes.ainex_soccer.env import AINexReachEnv
+from scenes.ainex_soccer.env import AINexWalkToBallEnv
 
 
 def make_env(rank, seed):
     def _init():
-        env = AINexReachEnv()
+        env = AINexWalkToBallEnv(spawn_radius=0.45, spawn_behind_table=True)
         env.reset(seed=seed + rank)
         return env
     return _init
@@ -44,9 +48,9 @@ class EpisodeCSVCallback(BaseCallback):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train PPO for AINex reach task.")
+    parser = argparse.ArgumentParser(description="Train PPO for AINex walk-to-ball (walk around table + reach).")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--timesteps", type=int, default=1_500_000, help="Training timesteps.")
+    parser.add_argument("--timesteps", type=int, default=1_000_000, help="Training timesteps.")
     parser.add_argument("--num-envs", type=int, default=max(1, os.cpu_count()), help="Parallel envs.")
     args = parser.parse_args()
 
@@ -56,11 +60,11 @@ def main():
     torch.manual_seed(args.seed)
 
     num_cpu = max(1, args.num_envs)
-    print(f"Launching {num_cpu} parallel environments...")
+    print(f"Launching {num_cpu} parallel environments (walk-to-ball)...")
 
     env = SubprocVecEnv([make_env(i, args.seed) for i in range(num_cpu)])
 
-    log_dir = os.path.join("logs", "ainex_reach")
+    log_dir = os.path.join("logs", "ainex_walk_to_ball")
     os.makedirs(log_dir, exist_ok=True)
     env = VecMonitor(env, filename=os.path.join(log_dir, "monitor.csv"))
 
@@ -83,10 +87,10 @@ def main():
         learning_rate=3e-4,
     )
 
-    print(f"Training PPO for {args.timesteps:,} timesteps...")
+    print(f"Training PPO for {args.timesteps:,} timesteps (walk around table to ball)...")
     model.learn(total_timesteps=args.timesteps, callback=callback)
 
-    save_path = "scenes/ainex_soccer/policies/ppo_ainex_reach"
+    save_path = "scenes/ainex_soccer/policies/ppo_ainex_walk_to_ball"
     model.save(save_path)
     print(f"Model saved as {save_path}.zip")
 
