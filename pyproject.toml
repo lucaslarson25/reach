@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.scripts]
-reach-train = "arm_train:main"
+reach-train = "scenes.industrial_arm_reaching.training.arm_train:main"
 reach-eval = "eval_model:main"
 reach-render-demo = "renders.render_demo:main"
 reach-render-model = "renders.render_model:main"
@@ -46,7 +46,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["config", "envs", "renders", "scenes", "scenes.*"]
+include = ["config", "envs", "renders", "scenes", "scenes.*", "tests"]
 exclude = ["documentation*", "website*", "notebooks*", "demos*"]
 
 [tool.setuptools.package-data]

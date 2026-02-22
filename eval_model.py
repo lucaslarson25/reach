@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-from envs.mujoco_arm_env import Z1ReachEnv
+from scenes.industrial_arm_reaching.env import Z1ReachEnv
 from stable_baselines3 import PPO
 
 

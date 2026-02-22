@@ -18,7 +18,7 @@ sys.path.insert(0, parent_dir)
 sys.path.insert(0, os.path.dirname(parent_dir))
 
 from scenes.industrial_arm_reaching.env import Z1ReachEnv
-from training.infer_from_keypoints import GestureInferenceFromKeypoints
+from scenes.image_recognition.training.infer_from_keypoints import GestureInferenceFromKeypoints
 import mediapipe as mp
 
 
