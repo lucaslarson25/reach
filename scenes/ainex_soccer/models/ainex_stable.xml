@@ -44,10 +44,10 @@
        diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2"/>
 
     <!-- floor -->
-    <geom name="floor" type="plane" pos="0 0 0" size="5 5 0.1" rgba="0.9 0.9 0.9 1" friction="1.2 0.3 0.3"/>
+    <geom name="floor" type="plane" pos="0 0 0" size="5 5 0.1" rgba="0.9 0.9 0.9 1" friction="1.2 0.3 0.3" contype="1" conaffinity="1"/>
 
     <!-- simple table for reach task -->
-    <geom name="table" type="box" pos="0.32 0 0.1492" size="0.18 0.14 0.02" rgba="0.6 0.6 0.6 1" friction="1.0 0.3 0.3"/>
+    <geom name="table" type="box" pos="0.32 0 0.1492" size="0.18 0.14 0.02" rgba="0.6 0.6 0.6 1" friction="1.0 0.3 0.3" contype="1" conaffinity="1"/>
 
     <!-- robot declaration -->
     <body name="torso" pos="0 0 1.2">
@@ -70,7 +70,7 @@
             <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_pitch_link"/>
             <geom type="capsule" fromto="0 0 0 0 0 0.3" size="0.03" rgba="1 0 0 0.3" contype="1" conaffinity="1" />
             <body name="r_knee_link" pos="-0.000372039 5e-05 -0.0968862">
-              <geom name="r_shin_col" type="capsule" fromto="0 0 0  0 0 -0.09" size="0.018" rgba="0 0 0 0"/>
+              <geom name="r_shin_col" type="capsule" fromto="0 0 0  0 0 -0.09" size="0.018" rgba="0 0 0 0" contype="1" conaffinity="1"/>
               <inertial pos="0.00334266 0.0196474 -0.0425049" quat="0.999535 -0.000104839 -0.0304236 0.0019934" mass="0.045" diaginertia="6.75039e-05 5.49998e-05 2.05563e-05"/>
               <joint name="r_knee" pos="0 0 0" axis="0 -1 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.5"/>
               <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_knee_link"/>
@@ -104,7 +104,7 @@
             <joint name="l_hip_pitch" pos="0 0 0" axis="0 1 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.5"/>
             <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="l_hip_pitch_link"/>
             <body name="l_knee_link" pos="-0.00037204 -5e-05 -0.096886">
-              <geom name="l_shin_col" type="capsule" fromto="0 0 0  0 0 -0.09" size="0.018" rgba="0 0 0 0"/>
+              <geom name="l_shin_col" type="capsule" fromto="0 0 0  0 0 -0.09" size="0.018" rgba="0 0 0 0" contype="1" conaffinity="1"/>
               <inertial pos="0.00334256 -0.0196465 -0.0425053" quat="0.999536 8.38713e-05 -0.0304236 -0.00159474" mass="0.045" diaginertia="6.75038e-05 5.49999e-05 2.05563e-05"/>
               <joint name="l_knee" pos="0 0 0" axis="0 1 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.5"/>
               <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="l_knee_link"/>
@@ -116,7 +116,7 @@
                   <inertial pos="0.028508 0.012873 -0.017671" quat="-0.0257514 0.696659 -0.0389182 0.715883" mass="0.0675" diaginertia="0.000126012 9.21991e-05 4.20891e-05"/>
                   <joint name="l_ank_roll" pos="0 0 0" axis="1 0 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.5"/>
                   <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="l_ank_roll_link"/>
-                  <geom name="l_foot_col" type="box" pos="0 0 -0.02" size="0.035 0.018 0.01" rgba="0 0 0 0"/>
+                  <geom name="l_foot_col" type="box" pos="0 0 -0.02" size="0.035 0.018 0.01" rgba="0 0 0 0" contype="1" conaffinity="1"/>
                 </body>
               </body>
             </body>
@@ -189,7 +189,7 @@
     <!-- target ball -->
     <body name="ball" pos="0.32 0 0.1892">
       <freejoint/>
-      <geom name="ball_geom" type="sphere" size="0.03" rgba="0.9 0.2 0.2 1" density="200"/>
+      <geom name="ball_geom" type="sphere" size="0.03" rgba="0.9 0.2 0.2 1" density="200" contype="1" conaffinity="1"/>
     </body>
   </worldbody>
 
