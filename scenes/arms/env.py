@@ -35,8 +35,9 @@ class ArmReachEnv(gym.Env):
         reach_max: float | None = None,
         ball_mode: str = "shared",
         fix_arm_indices: list[int] | None = None,
-        reward_time_penalty: float = 0.001,
-        reward_smoothness: float = 0.01,
+        reward_time_penalty: float = 0.0005,
+        reward_smoothness: float = 0.02,
+        reward_move_away_penalty: float = 0.5,
         metrics_csv_path: str | None = None,
         disable_logging: bool = False,
     ):
@@ -60,6 +61,7 @@ class ArmReachEnv(gym.Env):
         self._fix_arm_indices = set(fix_arm_indices or [])
         self._reward_time_penalty = float(reward_time_penalty)
         self._reward_smoothness = float(reward_smoothness)
+        self._reward_move_away_penalty = float(reward_move_away_penalty)
 
         info = get_arm_info(arm_id)
         n_arms = len(info["ee_sites"]) if info and info.get("ee_sites") else 1
@@ -247,11 +249,12 @@ class ArmReachEnv(gym.Env):
             if arm_i < len(self._actuator_groups):
                 for a_idx in self._actuator_groups[arm_i]:
                     scaled[a_idx] = self.data.ctrl[a_idx]
-        self.data.ctrl[:] = 0.5 * self.data.ctrl + 0.5 * scaled
+        # Blend 70% prev + 30% target for smoother, less violent motion
+        self.data.ctrl[:] = 0.7 * self.data.ctrl + 0.3 * scaled
         mujoco.mj_step(self.model, self.data)
         self.step_count += 1
         dists = []
-        reward = -0.05 * float(np.sum(np.square(action)))
+        reward = -0.1 * float(np.sum(np.square(action)))  # penalize large actions
         reward -= self._reward_time_penalty
         if hasattr(self, "_prev_action") and self._prev_action is not None:
             jerk = float(np.sum(np.square(action - self._prev_action)))
@@ -268,7 +271,11 @@ class ArmReachEnv(gym.Env):
             prev_d = self.prev_dists[i] if i < len(self.prev_dists) else dist
             near = float(np.clip(dist / 0.1, 0.0, 1.0))
             dense = float((1.0 / ((1.0 + 10 * dist) ** 1.5)) * near)
-            progress = float(np.clip(prev_d - dist, -0.03, 0.03) * near)
+            delta_d = prev_d - dist
+            progress = float(np.clip(delta_d, -0.03, 0.03) * near)
+            # Explicit penalty for moving away from ball (scales with distance increase)
+            if delta_d < 0:
+                reward -= self._reward_move_away_penalty * min(-delta_d, 0.05) * near
             xmat = self.data.site_xmat[self._ee_site_ids[i]].reshape(3, 3)
             target_dir = ball_pos - ee_pos
             n = np.linalg.norm(target_dir)

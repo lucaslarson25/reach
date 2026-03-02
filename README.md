@@ -368,6 +368,32 @@ Uses **action groups** for leg walking (from `assets/action_groups/csv/`) and **
 
 ---
 
+## Other Scenes
+
+### Cartpole
+
+Jupyter notebooks for experimentation and analysis (`scenes/cartpole/`): `01_environment_testing.ipynb`, `02_policy_analysis.ipynb`, `03_reward_tuning.ipynb`, `04_data_analysis.ipynb`, `05_visualization.ipynb`. Run `jupyter notebook` or `jupyter lab`.
+
+### Humanoid / Legs
+
+- **scenes/humanoid/** – Placeholder for full-body humanoid scenes. AINex humanoid content is under `scenes/ainex_soccer/`.
+- **scenes/legs/** – Placeholder for legs-only scenes (bipedal walking, quadruped, etc.).
+
+### Image Recognition (Gesture Control)
+
+MediaPipe + PyTorch gesture recognition (handshake, fist bump, high five). Integrates with MuJoCo for gesture-controlled robot reaching.
+
+**Collect data:** `python scenes/image_recognition/training/collect_gesture_data.py` (target: ≥100 samples per gesture)  
+**Train:** `python scenes/image_recognition/training/train_gesture_classifier.py --data-dir scenes/image_recognition/data --model-type lstm`  
+**Inference:** `python scenes/image_recognition/training/infer_gesture.py --model-path scenes/image_recognition/models/gesture_classifier.pth`  
+**Gesture-controlled demo:** `python scenes/image_recognition/integration/demo_gesture_control.py --model-path scenes/image_recognition/models/gesture_classifier.pth`
+
+### Industrial Arm Reaching (Legacy)
+
+Legacy multi-arm reach env in `scenes/industrial_arm_reaching/`. Registry arms: z1, arm_2link. Train with `ARM_ID=z1 python -m scenes.industrial_arm_reaching.training.arm_train_mac`. For new arms, prefer `scenes/arms/` with `scripts/train.py`.
+
+---
+
 ## Training on NAU Monsoon HPC
 
 For long overnight training runs, use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/).
