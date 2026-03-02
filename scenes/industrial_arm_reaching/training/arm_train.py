@@ -44,24 +44,23 @@ class TerminationRatioCallback(BaseCallback):
         self.total_episodes = 0
 
 
-def make_env(rank):
-    """
-    Utility function to create a new environment instance.
-    Each environment runs in its own process.
-    """
+def make_env(rank, arm_id=None, model_path=None):
     def _init():
-        env = Z1ReachEnv()
-        return env
+        return Z1ReachEnv(arm_id=arm_id, model_path=model_path)
     return _init
 
 
 def main():
-    # === Auto-detect CPU cores ===
-    num_cpu = max(1, os.cpu_count())  # half of available cores for safety
-    print(f"Launching {num_cpu} parallel environments...")
+    arm_id = os.getenv("ARM_ID", "").strip() or None
+    model_path = os.getenv("MODEL_PATH", "").strip() or None
+    if arm_id:
+        print(f"Using arm from registry: {arm_id}")
+    if model_path:
+        print(f"Using model path: {model_path}")
 
-    # === Create vectorized environments ===
-    env = SubprocVecEnv([make_env(i) for i in range(num_cpu)])
+    num_cpu = max(1, os.cpu_count())
+    print(f"Launching {num_cpu} parallel environments...")
+    env = SubprocVecEnv([make_env(i, arm_id=arm_id, model_path=model_path) for i in range(num_cpu)])
 
     callback = CallbackList([
         ProgressBarCallback(),
@@ -87,8 +86,8 @@ def main():
     print(f"Training PPO for {total_timesteps:,} timesteps...")
     model.learn(total_timesteps=total_timesteps, callback=callback)
 
-    # === Save model ===
-    save_path = "policies/ppo_z1_parallel"
+    tag = arm_id or "custom"
+    save_path = f"policies/ppo_{tag}_parallel"
     model.save(save_path)
     print(f"Model saved as {save_path}.zip")
 

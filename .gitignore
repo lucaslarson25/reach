@@ -26,6 +26,7 @@ temp/
 # MuJoCo temporary or generated files
 *.mjb
 *.xml.tmp
+scenes/arms/models/_composed_*.xml
 
 # Python
 __pycache__/

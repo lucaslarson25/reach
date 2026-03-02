@@ -2,6 +2,8 @@ import os
 import argparse
 import csv
 import random
+from pathlib import Path
+
 import numpy as np
 import torch
 from stable_baselines3 import PPO
@@ -11,9 +13,13 @@ from stable_baselines3.common.utils import set_random_seed
 from scenes.ainex_soccer.env import AINexReachEnv
 
 
-def make_env(rank, seed):
+def make_env(rank, seed, action_groups_dir=None, action_group_blend=0.5):
     def _init():
-        env = AINexReachEnv()
+        kwargs = {}
+        if action_groups_dir is not None:
+            kwargs["action_groups_dir"] = action_groups_dir
+            kwargs["action_group_blend"] = action_group_blend
+        env = AINexReachEnv(**kwargs)
         env.reset(seed=seed + rank)
         return env
     return _init
@@ -44,10 +50,17 @@ class EpisodeCSVCallback(BaseCallback):
 
 
 def main():
+    repo_root = Path(__file__).resolve().parents[3]
+    default_ag_dir = repo_root / "assets" / "action_groups" / "csv"
+
     parser = argparse.ArgumentParser(description="Train PPO for AINex reach task.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--timesteps", type=int, default=1_500_000, help="Training timesteps.")
     parser.add_argument("--num-envs", type=int, default=max(1, os.cpu_count()), help="Parallel envs.")
+    parser.add_argument("--action-groups", type=str, default=str(default_ag_dir),
+                        help="Path to action group CSVs. Use '' to disable.")
+    parser.add_argument("--action-group-blend", type=float, default=0.5,
+                        help="Blend factor: 0=policy only, 1=action group only. Default 0.5.")
     args = parser.parse_args()
 
     set_random_seed(args.seed)
@@ -55,10 +68,20 @@ def main():
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
+    action_groups_dir = Path(args.action_groups) if args.action_groups else None
+    if action_groups_dir is not None and action_groups_dir.exists():
+        print(f"Using action groups from: {action_groups_dir}, blend={args.action_group_blend}")
+    else:
+        action_groups_dir = None
+        print("Training without action groups (policy-only)")
+
     num_cpu = max(1, args.num_envs)
     print(f"Launching {num_cpu} parallel environments...")
 
-    env = SubprocVecEnv([make_env(i, args.seed) for i in range(num_cpu)])
+    env = SubprocVecEnv([
+        make_env(i, args.seed, action_groups_dir, args.action_group_blend)
+        for i in range(num_cpu)
+    ])
 
     log_dir = os.path.join("logs", "ainex_reach")
     os.makedirs(log_dir, exist_ok=True)
