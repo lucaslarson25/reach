@@ -25,9 +25,9 @@ for ep in range(num_episodes):
         done = terminated or truncated
         steps += 1
 
-    # Compute final distance
-    ee_pos = env.data.xpos[-1]
-    ball_pos = env.data.body("ball").xpos
+    # Compute final distance (use env's end-effector site so it works for any arm)
+    ee_pos = env.data.site_xpos[env._ee_site_id]
+    ball_pos = env.data.xpos[env._ball_body_id]
     final_dist = np.linalg.norm(ee_pos - ball_pos)
     print(f"Episode {ep+1}: final distance = {final_dist:.4f}")
 
