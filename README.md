@@ -340,6 +340,12 @@ The job runs in the background; you can disconnect. On success, policies are pus
 
 ---
 
+## Training Tips
+
+- To edit timesteps, the amount a policy trains for, you **must** find parser.add_argument
+- Locate the `--timestep` argument, then edit the **default** argument with integers; Example: `default=3_000_000`
+- Use YAML files to change how many episodes and each episode duration equivalent to your policy
+
 ## Development Tips
 
 - Always activate your `.venv` before running scripts.
