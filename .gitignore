@@ -26,6 +26,8 @@ temp/
 # MuJoCo temporary or generated files
 *.mjb
 *.xml.tmp
+scenes/arms/models/_composed_*.xml
+scenes/arms/models/arms/*/_composed.xml
 
 # Python
 __pycache__/
@@ -56,7 +58,6 @@ env/
 ENV/
 .venv
 etc/
-scripts/
 pyvenv.cfg
 
 # Jupyter Notebook
@@ -73,6 +74,7 @@ share/
 
 # Data and Models (large files)
 data/
+policies/*.zip
 models/*.pth
 models/*.pt
 models/*.pkl

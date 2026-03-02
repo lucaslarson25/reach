@@ -6,9 +6,11 @@ experiment:
 
 environment:
   class_name: "Z1ReachEnv"
-  model_path: "models/z1scene.xml"
-  success_threshold: 0.05 # matches env hardcoded value
-  max_episode_steps: 1000 # matches env hardcoded value
+  # Use arm_id (registry key, e.g. z1, arm_2link) or model_path to scene XML
+  arm_id: "z1"
+  model_path: null  # e.g. "scenes/industrial_arm_reaching/models/z1scene.xml"
+  success_threshold: 0.05
+  max_episode_steps: 1000
 
 agent:
   algorithm: "PPO"

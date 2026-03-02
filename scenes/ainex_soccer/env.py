@@ -1,9 +1,19 @@
 import os
+import random
+from pathlib import Path
+from typing import Optional
+
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 import mujoco
 import mujoco.viewer
+
+from scenes.ainex_soccer.action_group_reach import (
+    ActionGroupReach,
+    load_action_group_reach,
+    get_interpolated_reference,
+)
 
 
 class AINexEnv(gym.Env):
@@ -160,6 +170,11 @@ class AINexReachEnv(gym.Env):
             "r_el_yaw",
             "r_gripper",
         ),
+        action_groups_dir: Optional[str | Path] = None,
+        action_group_names: Optional[list[str]] = None,
+        action_group_blend: float = 0.5,
+        include_ref_in_obs: bool = True,
+        elbow_yaw_limit_rad: Optional[float] = 0.4,
     ):
         super().__init__()
         self.render_mode = render_mode
@@ -168,6 +183,9 @@ class AINexReachEnv(gym.Env):
         self.max_steps = max_steps
         self.disable_logging = disable_logging
         self.smooth_alpha = smooth_alpha
+        self.action_group_blend = float(np.clip(action_group_blend, 0.0, 1.0))
+        self.include_ref_in_obs = include_ref_in_obs
+        self.elbow_yaw_limit_rad = elbow_yaw_limit_rad
 
         if model_path is None:
             base_path = os.path.dirname(os.path.abspath(__file__))
@@ -181,10 +199,15 @@ class AINexReachEnv(gym.Env):
         self._arm_actuators, self._non_arm_actuators = self._split_actuators()
         self._arm_qpos_adr, self._arm_ranges = self._arm_joint_targets()
 
+        # r_el_yaw is index 3 (r_sho_pitch, r_sho_roll, r_el_pitch, r_el_yaw, r_gripper)
+        self._elbow_yaw_idx = 3
+
         n_act = len(self._arm_actuators)
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(n_act,), dtype=np.float32)
 
         n_obs = self.model.nq + self.model.nv + 3 + 3
+        if include_ref_in_obs:
+            n_obs += n_act
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32)
 
         self._gripper_site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "r_gripper_tip")
@@ -196,6 +219,29 @@ class AINexReachEnv(gym.Env):
 
         self._home_qpos = None
         self._prev_action = np.zeros(n_act, dtype=np.float32)
+
+        self._action_groups: list[ActionGroupReach] = []
+        self._current_ag: Optional[ActionGroupReach] = None
+        self._current_ref = np.zeros(n_act, dtype=np.float32)
+
+        if action_groups_dir is not None and action_group_blend > 0:
+            ag_dir = Path(action_groups_dir)
+            names = action_group_names or [
+                "raise_right_hand", "place_block", "right_hand_put_block", "hand_open", "hand_back"
+            ]
+            joint_ranges = list(self._arm_ranges)
+            for name in names:
+                path = ag_dir / f"{name}.csv"
+                if path.exists():
+                    try:
+                        ag = load_action_group_reach(path, joint_ranges)
+                        if ag.frames:
+                            self._action_groups.append(ag)
+                    except Exception as e:
+                        if not disable_logging:
+                            print(f"[AINexReach] Skip {name}: {e}")
+            if self._action_groups and not disable_logging:
+                print(f"[AINexReach] Loaded {len(self._action_groups)} action groups, blend={action_group_blend}")
 
     def _split_actuators(self):
         arm_actuators = []
@@ -231,10 +277,25 @@ class AINexReachEnv(gym.Env):
                 ids.append(gid)
         return ids
 
+    def _ref_to_normalized(self, ref_rad: np.ndarray) -> np.ndarray:
+        """Convert reference joint angles (rad) to policy space [-1, 1]."""
+        out = np.zeros_like(ref_rad, dtype=np.float32)
+        for i, (min_q, max_q) in enumerate(self._arm_ranges):
+            span = max_q - min_q
+            home = self._home_qpos[self._arm_qpos_adr[i]] if self._home_qpos is not None else 0.0
+            if span > 1e-6:
+                out[i] = (ref_rad[i] - home) / (0.5 * span)
+            else:
+                out[i] = 0.0
+        return np.clip(out, -1.0, 1.0)
+
     def _get_obs(self) -> np.ndarray:
         grip_pos = self.data.site_xpos[self._gripper_site_id]
         ball_pos = self.data.xpos[self._ball_body_id]
-        return np.concatenate([self.data.qpos, self.data.qvel, grip_pos, ball_pos]).astype(np.float32)
+        obs = np.concatenate([self.data.qpos, self.data.qvel, grip_pos, ball_pos]).astype(np.float32)
+        if self.include_ref_in_obs:
+            obs = np.concatenate([obs, self._current_ref.astype(np.float32)])
+        return obs
 
     def get_end_effector_pos(self) -> np.ndarray:
         return self.data.site_xpos[self._gripper_site_id].copy()
@@ -288,6 +349,18 @@ class AINexReachEnv(gym.Env):
         self.data.qvel[qpos_adr:qpos_adr + 6] = 0.0
 
     def _apply_action(self, action: np.ndarray):
+        # Blend with action group reference when available
+        if self._current_ag is not None and self.action_group_blend > 0:
+            phase = self.step_count / max(1, self.max_steps)
+            ref_rad = get_interpolated_reference(self._current_ag, phase)
+            ref_norm = self._ref_to_normalized(ref_rad)
+            blended = (1.0 - self.action_group_blend) * action + self.action_group_blend * ref_norm
+            blended = np.clip(blended, -1.0, 1.0).astype(np.float32)
+            self._current_ref[:] = ref_norm
+            action = blended
+        else:
+            self._current_ref[:] = 0.0
+
         # Smooth actions for steadier arm motion
         smoothed = self.smooth_alpha * self._prev_action + (1.0 - self.smooth_alpha) * action
         self._prev_action = smoothed
@@ -298,6 +371,13 @@ class AINexReachEnv(gym.Env):
         for idx, act_id in enumerate(self._arm_actuators):
             qpos_adr = self._arm_qpos_adr[idx]
             min_q, max_q = self._arm_ranges[idx]
+
+            # Constrain r_el_yaw to avoid "pouring" forearm rotation during reach
+            if idx == self._elbow_yaw_idx and self.elbow_yaw_limit_rad is not None:
+                home = self._home_qpos[qpos_adr]
+                min_q = float(max(min_q, home - self.elbow_yaw_limit_rad))
+                max_q = float(min(max_q, home + self.elbow_yaw_limit_rad))
+
             span = max_q - min_q
             if span <= 0.0:
                 target = self._home_qpos[qpos_adr]
@@ -318,6 +398,11 @@ class AINexReachEnv(gym.Env):
         self.step_count = 0
         self._prev_action[:] = 0.0
 
+        if self._action_groups:
+            self._current_ag = random.choice(self._action_groups)
+        else:
+            self._current_ag = None
+
         if not self._apply_keyframe("squat_start"):
             self.data.qpos[:] = 0.0
             self.data.qvel[:] = 0.0
@@ -327,6 +412,12 @@ class AINexReachEnv(gym.Env):
         self._home_qpos = self.data.qpos.copy()
         self._reset_ball()
         mujoco.mj_forward(self.model, self.data)
+
+        if self._current_ag is not None:
+            ref_rad = get_interpolated_reference(self._current_ag, 0.0)
+            self._current_ref[:] = self._ref_to_normalized(ref_rad)
+        else:
+            self._current_ref[:] = 0.0
 
         return self._get_obs(), {}
 
