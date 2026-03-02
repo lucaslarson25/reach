@@ -1,6 +1,7 @@
 """
 Arm-only reach env: you upload only the arm XML. The scene (floor + ball + arm)
-is composed at load time. Training adapts to arm length and DOF.
+is composed at load time. Supports single-arm and multi-arm (e.g. ALOHA).
+ball_mode: "shared" = 1 ball, all arms reach it; "per_arm" = N balls, arm i reaches ball_i.
 """
 
 import os
@@ -16,6 +17,7 @@ from scenes.arms.arm_registry import (
     resolve_model_path,
     resolve_ee_site_name,
     get_arm_config,
+    get_arm_info,
     compute_reach_from_model,
 )
 
@@ -31,6 +33,10 @@ class ArmReachEnv(gym.Env):
         ee_site_name: str | None = None,
         reach_min: float | None = None,
         reach_max: float | None = None,
+        ball_mode: str = "shared",
+        fix_arm_indices: list[int] | None = None,
+        reward_time_penalty: float = 0.001,
+        reward_smoothness: float = 0.01,
         metrics_csv_path: str | None = None,
         disable_logging: bool = False,
     ):
@@ -38,17 +44,28 @@ class ArmReachEnv(gym.Env):
         Reach env: upload only the arm. Scene (floor + ball + arm) is composed at load time.
 
         - model_path: optional full scene XML; if set, used as-is. Otherwise scene is composed.
-        - arm_id: registry key (e.g. "z1", "arm_2link"). Composed scene uses this arm.
-        - ee_site_name: end-effector site; auto-resolved if None.
-        - reach_min / reach_max: ball sampling radius; from registry or computed if not set.
+        - arm_id: registry key (e.g. "z1", "aloha"). Composed scene uses this arm.
+        - ee_site_name: end-effector site (single-arm); auto-resolved if None. Ignored if arm has multiple EEs.
+        - reach_min / reach_max: ball sampling radius; from registry or discovery if not set.
+        - ball_mode: "shared" (1 ball, all arms reach it) or "per_arm" (N balls, arm i reaches ball_i).
         """
         super().__init__()
         self.render_mode = render_mode
         self.viewer = None
         self.step_count = 0
         self._arm_id = arm_id
+        self._ball_mode = (ball_mode or "shared").lower()
+        if self._ball_mode not in ("shared", "per_arm"):
+            self._ball_mode = "shared"
+        self._fix_arm_indices = set(fix_arm_indices or [])
+        self._reward_time_penalty = float(reward_time_penalty)
+        self._reward_smoothness = float(reward_smoothness)
 
-        resolved = resolve_model_path(arm_id, model_path)
+        info = get_arm_info(arm_id)
+        n_arms = len(info["ee_sites"]) if info and info.get("ee_sites") else 1
+        ball_count = n_arms if (n_arms > 1 and self._ball_mode == "per_arm") else 1
+
+        resolved = resolve_model_path(arm_id, model_path, ball_count)
         if not os.path.isfile(resolved):
             raise FileNotFoundError(f"Model not found: {resolved}")
         print("Loading model from:", resolved)
@@ -56,19 +73,47 @@ class ArmReachEnv(gym.Env):
         self.model = mujoco.MjModel.from_xml_path(resolved)
         self.data = mujoco.MjData(self.model)
 
-        self._ee_site_name = resolve_ee_site_name(self.model, arm_id, ee_site_name)
-        self._ee_site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, self._ee_site_name)
-        self._ball_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "ball")
+        info = get_arm_info(arm_id)
+        if info and info.get("ee_sites"):
+            self._ee_site_names = list(info["ee_sites"])
+        else:
+            ee_name = resolve_ee_site_name(self.model, arm_id, ee_site_name)
+            self._ee_site_names = [ee_name]
+        self._ee_site_ids = [
+            mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, n)
+            for n in self._ee_site_names
+        ]
+        self._n_arms = len(self._ee_site_names)
+        self._actuator_groups = info.get("actuator_groups") if info else None
+        if not self._actuator_groups or len(self._actuator_groups) != self._n_arms:
+            self._actuator_groups = [list(range(self.model.nu))]  # fallback: all actuators
+        self._ball_body_ids = []
+        for i in range(ball_count):
+            name = f"ball_{i}" if ball_count > 1 else "ball"
+            bid = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, name)
+            self._ball_body_ids.append(bid)
 
         cfg = get_arm_config(arm_id)
-        self._reach_min = reach_min if reach_min is not None else (cfg.reach_min if cfg else 0.08)
+        _reach_min = reach_min if reach_min is not None else (cfg.reach_min if cfg else 0.08)
         if reach_max is not None:
-            self._reach_max = reach_max
+            _reach_max = reach_max
+        elif info and info.get("reach_max") is not None:
+            _reach_max = info["reach_max"]
         elif cfg and cfg.reach_max is not None:
-            self._reach_max = cfg.reach_max
+            _reach_max = cfg.reach_max
         else:
-            self._reach_max = compute_reach_from_model(self.model, self.data, self._ee_site_id)
-            print("Computed reach_max =", round(self._reach_max, 3))
+            _reach_max = compute_reach_from_model(
+                self.model, self.data, self._ee_site_ids[0]
+            )
+            print("Computed reach_max =", round(_reach_max, 3))
+        # Ensure ball is not too close: min distance >= fraction of arm's max reach (scales with arm length)
+        _min_reach_fraction = 0.45
+        min_allowed = _min_reach_fraction * _reach_max
+        if _reach_min < min_allowed:
+            _reach_min = min_allowed
+            print("Reach min set to", round(_reach_min, 3), "(fraction of arm reach)")
+        self._reach_min = min(_reach_min, _reach_max * 0.98)
+        self._reach_max = _reach_max
 
         self._home_keyframe_name = (cfg.home_keyframe_name if cfg else "home") or "home"
         self._has_home_key = False
@@ -78,9 +123,20 @@ class ArmReachEnv(gym.Env):
                 break
 
         n_act = self.model.nu
-        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(n_act,), dtype=np.float32)
-        n_obs = self.model.nq + self.model.nv + 3 + 3
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32)
+        if self._fix_arm_indices:
+            act_indices = []
+            for i in range(self._n_arms):
+                if i not in self._fix_arm_indices and i < len(self._actuator_groups):
+                    act_indices.extend(self._actuator_groups[i])
+            n_act = len(act_indices) if act_indices else n_act
+            self._action_indices = act_indices
+        else:
+            self._action_indices = list(range(n_act))
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(len(self._action_indices),), dtype=np.float32)
+        n_obs = self.model.nq + self.model.nv + self._n_arms * (3 + 3)
+        self.observation_space = spaces.Box(
+            low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32
+        )
 
         self.disable_logging = disable_logging
         if not disable_logging:
@@ -94,15 +150,22 @@ class ArmReachEnv(gym.Env):
         self._csv_initialized = False
 
     def _get_obs(self) -> np.ndarray:
-        ee_pos = self.data.site_xpos[self._ee_site_id]
-        ball_pos = self.data.xpos[self._ball_body_id]
-        return np.concatenate([self.data.qpos, self.data.qvel, ee_pos, ball_pos]).astype(np.float32)
+        parts = [self.data.qpos, self.data.qvel]
+        for i in range(self._n_arms):
+            ee_pos = self.data.site_xpos[self._ee_site_ids[i]]
+            ball_id = self._ball_body_ids[min(i, len(self._ball_body_ids) - 1)]
+            ball_pos = self.data.xpos[ball_id]
+            parts.append(ee_pos)
+            parts.append(ball_pos)
+        return np.concatenate(parts).astype(np.float32)
 
     def _set_ball_random_pos(self):
-        r = np.random.uniform(self._reach_min, self._reach_max)
-        theta = np.random.uniform(0, 2 * np.pi)
-        x, y, z = r * np.cos(theta), r * np.sin(theta), 0.05
-        self.model.body("ball").pos[:] = [x, y, z]
+        for i in range(len(self._ball_body_ids)):
+            r = np.random.uniform(self._reach_min, self._reach_max)
+            theta = np.random.uniform(0, 2 * np.pi)
+            x, y, z = r * np.cos(theta), r * np.sin(theta), 0.05
+            body_name = f"ball_{i}" if len(self._ball_body_ids) > 1 else "ball"
+            self.model.body(body_name).pos[:] = [x, y, z]
         mujoco.mj_forward(self.model, self.data)
 
     def _initialize_csv(self):
@@ -145,50 +208,92 @@ class ArmReachEnv(gym.Env):
             "orientation_sum": 0.0, "action_norm_sum": 0.0, "reward_sum": 0.0, "success": False,
         }
         if self._has_home_key:
-            self.data.qpos[:] = self.model.key(self._home_keyframe_name).qpos
+            key = self.model.key(self._home_keyframe_name)
+            self.data.qpos[:] = key.qpos
+            self.data.ctrl[:] = key.ctrl
         else:
             self.data.qpos[:] = self.model.qpos0
+            # Set ctrl to match current joint positions so the arm doesn't jump
+            for i in range(self.model.nu):
+                j_id = int(self.model.actuator_trnid[i, 0])
+                qadr = int(self.model.jnt_qposadr[j_id])
+                self.data.ctrl[i] = self.data.qpos[qadr]
         self._set_ball_random_pos()
         mujoco.mj_forward(self.model, self.data)
-        ee_pos = self.data.site_xpos[self._ee_site_id]
-        ball_pos = self.data.xpos[self._ball_body_id]
-        self.prev_dist = float(np.linalg.norm(ee_pos - ball_pos))
+        self.prev_dists = []
+        for i in range(self._n_arms):
+            ee_pos = self.data.site_xpos[self._ee_site_ids[i]]
+            ball_id = self._ball_body_ids[min(i, len(self._ball_body_ids) - 1)]
+            ball_pos = self.data.xpos[ball_id]
+            self.prev_dists.append(float(np.linalg.norm(ee_pos - ball_pos)))
         self.step_count = 0
+        self._prev_action = None
         return self._get_obs(), {}
 
     def step(self, action):
         low, high = self.model.actuator_ctrlrange.T
-        scaled = low + 0.5 * (action + 1.0) * (high - low)
+        full_action = np.zeros(self.model.nu, dtype=np.float32)
+        for k, a_idx in enumerate(self._action_indices):
+            if k < len(action):
+                full_action[a_idx] = action[k]
+            else:
+                full_action[a_idx] = 0.0
+        for arm_i in self._fix_arm_indices:
+            if arm_i < len(self._actuator_groups):
+                for a_idx in self._actuator_groups[arm_i]:
+                    full_action[a_idx] = 0.0  # will use current ctrl for fixed arms
+        scaled = low + 0.5 * (full_action + 1.0) * (high - low)
+        for arm_i in self._fix_arm_indices:
+            if arm_i < len(self._actuator_groups):
+                for a_idx in self._actuator_groups[arm_i]:
+                    scaled[a_idx] = self.data.ctrl[a_idx]
         self.data.ctrl[:] = 0.5 * self.data.ctrl + 0.5 * scaled
         mujoco.mj_step(self.model, self.data)
         self.step_count += 1
-        ee_pos = self.data.site_xpos[self._ee_site_id]
-        ball_pos = self.data.xpos[self._ball_body_id]
-        dist = float(np.linalg.norm(ee_pos - ball_pos))
-        if not hasattr(self, "prev_dist"):
-            self.prev_dist = dist
-        near = float(np.clip(dist / 0.1, 0.0, 1.0))
-        dense = float((1.0 / ((1.0 + 10 * dist) ** 1.5)) * near)
-        progress = float(np.clip(self.prev_dist - dist, -0.03, 0.03) * near)
-        xmat = self.data.site_xmat[self._ee_site_id].reshape(3, 3)
-        target_dir = (ball_pos - ee_pos)
-        n = np.linalg.norm(target_dir)
-        if n > 0:
-            target_dir /= n
-        ori = float(np.dot(xmat[:, 0], target_dir))
-        reward = 3.0 * dense + 1.5 * progress + 0.45 * ori - 0.05 * float(np.sum(np.square(action)))
-        terminated = dist < 0.05
+        dists = []
+        reward = -0.05 * float(np.sum(np.square(action)))
+        reward -= self._reward_time_penalty
+        if hasattr(self, "_prev_action") and self._prev_action is not None:
+            jerk = float(np.sum(np.square(action - self._prev_action)))
+            reward -= self._reward_smoothness * jerk
+        self._prev_action = action.copy() if hasattr(action, "copy") else np.array(action)
+        term_flags = []
+        ori_sum = 0.0
+        for i in range(self._n_arms):
+            ee_pos = self.data.site_xpos[self._ee_site_ids[i]]
+            ball_id = self._ball_body_ids[min(i, len(self._ball_body_ids) - 1)]
+            ball_pos = self.data.xpos[ball_id]
+            dist = float(np.linalg.norm(ee_pos - ball_pos))
+            dists.append(dist)
+            prev_d = self.prev_dists[i] if i < len(self.prev_dists) else dist
+            near = float(np.clip(dist / 0.1, 0.0, 1.0))
+            dense = float((1.0 / ((1.0 + 10 * dist) ** 1.5)) * near)
+            progress = float(np.clip(prev_d - dist, -0.03, 0.03) * near)
+            xmat = self.data.site_xmat[self._ee_site_ids[i]].reshape(3, 3)
+            target_dir = ball_pos - ee_pos
+            n = np.linalg.norm(target_dir)
+            if n > 0:
+                target_dir /= n
+            ori = float(np.dot(xmat[:, 0], target_dir))
+            ori_sum += ori
+            reward += 3.0 * dense + 1.5 * progress + 0.45 * ori
+            if dist < 0.1 and dist >= 0.05:
+                reward -= 0.01
+            term_flags.append(dist < 0.05)
+            if dist < 0.05:
+                reward += 550.0 / self._n_arms
+        self.prev_dists = dists
+        # shared: any arm reaches; per_arm: all arms reach
+        if self._ball_mode == "shared":
+            terminated = any(term_flags)
+        else:
+            terminated = all(term_flags)
         truncated = self.step_count >= 1000
-        if terminated:
-            reward += 550.0
-        if dist < 0.1 and not terminated:
-            reward -= 0.01
-        self.prev_dist = dist
         if hasattr(self, "_episode_metrics"):
             self._episode_metrics["step_count"] += 1
-            self._episode_metrics["distance_sum"] += dist
-            self._episode_metrics["distance_final"] = dist
-            self._episode_metrics["orientation_sum"] += ori
+            self._episode_metrics["distance_sum"] += np.mean(dists)
+            self._episode_metrics["distance_final"] = float(np.mean(dists))
+            self._episode_metrics["orientation_sum"] += ori_sum / max(1, self._n_arms)
             self._episode_metrics["action_norm_sum"] += float(np.linalg.norm(action))
             self._episode_metrics["reward_sum"] += reward
             if terminated:
@@ -200,8 +305,17 @@ class ArmReachEnv(gym.Env):
     def render(self):
         if self.render_mode == "human":
             if self.viewer is None:
-                self.viewer = mujoco.viewer.launch(self.model, self.data)
-            self.viewer.sync()
+                try:
+                    self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+                except RuntimeError as e:
+                    if "mjpython" in str(e).lower() and "macos" in str(e).lower():
+                        raise RuntimeError(
+                            "On macOS, run the viewer with mjpython instead of python:\n"
+                            "  mjpython -m scenes.arms.training.run_simulation --model <path> --arm-id <arm_id>"
+                        ) from e
+                    raise
+            if self.viewer is not None:
+                self.viewer.sync()
 
     def close(self):
         if hasattr(self, "_episode_metrics") and self._episode_metrics.get("step_count", 0) > 0:

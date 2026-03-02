@@ -87,37 +87,48 @@ reach/
 │   ├── ainex/                  # Robot models, URDF, MJCF, meshes
 │   └── action_groups/          # raw (.d6a) and csv exports
 ├── config/
-│   ├── render_run.yaml          # Defines scene, model, policy, and runtime settings
-│   ├── ainex_render.yaml        # AINex stand config
-│   ├── ainex_reach.yaml         # AINex reach config
-│   └── render_loader.py         # Helper for reading and validating YAML configs
+│   ├── arms.yaml               # Arm reach: arm_id, ball_mode, train/run settings
+│   ├── render_run.yaml         # Legacy: scene, model, policy for rendering
+│   ├── ainex_render.yaml       # AINex stand config
+│   ├── ainex_reach.yaml        # AINex reach config
+│   └── arms_loader.py          # Loads arms.yaml, resolves policy paths
+│
+├── scripts/                    # Default entry points
+│   ├── train.py                # Train arm reach (delegates to arm_train_mac)
+│   └── run.py                  # Run arm policy with viewer (delegates to run_simulation)
+├── policies/                   # Trained arm policies (ppo_arms_<arm_id>_mac_<k>k.zip)
 │
 ├── cluster/
-│   ├── train_monsoon.sh         # SLURM job for Monsoon HPC (auto-push on success)
-│   └── test_monsoon.sh          # Smoke test (local or Monsoon)
+│   ├── train_monsoon.sh        # SLURM job for Monsoon HPC (auto-push on success)
+│   └── test_monsoon.sh         # Smoke test (local or Monsoon)
 ├── tests/
-│   └── smoke_test.py            # Quick sanity check (imports, env, PPO)
+│   └── smoke_test.py           # Quick sanity check (imports, env, PPO)
 ├── documentation/
-│   ├── monsoon_setup.md         # Monsoon HPC setup and workflow
+│   ├── monsoon_setup.md        # Monsoon HPC setup and workflow
 │   ├── demos/
 │   ├── headshots/
 │   ├── logos/
-│   └── *.pdf
-│   └── system_design.md         # Architecture, assumptions, limitations
+│   └── system_design.md        # Architecture, assumptions, limitations
 │
-├── envs/                        # Shared environments
+├── envs/                       # Shared environments
 │   └── mujoco_arm_env.py
 │
-├── scripts/                    # AINex Soccer viewers & replay (view_ainex_stable.py, etc.)
-├── tools/                      # AINex Soccer conversion tools (extract_actiongroup_to_csv.py)
+├── tools/                      # AINex Soccer conversion tools
 ├── renders/                    # Rendering and visualization scripts
-│   ├── render_demo.py           # x86 / CUDA policy renderer
-│   ├── render_demo_mac.py       # macOS policy renderer (uses mjpython)
-│   ├── render_model.py          # x86 / CUDA model viewer
-│   └── render_model_mac.py      # macOS model viewer (uses mjpython)
+│   ├── render_demo.py          # x86 / CUDA policy renderer
+│   ├── render_demo_mac.py      # macOS policy renderer (uses mjpython)
+│   ├── render_model.py         # x86 / CUDA model viewer
+│   └── render_model_mac.py     # macOS model viewer (uses mjpython)
 │
 ├── scenes/
-│   ├── ainex_soccer/             # AINex humanoid scene + training
+│   ├── arms/                   # Arm-only reach (YAML-driven, auto-discovery)
+│   │   ├── env.py              # ArmReachEnv
+│   │   ├── arm_registry.py     # arm_id → config (ee_site, reach, etc.)
+│   │   ├── arm_discovery.py    # Auto-infer from MJCF
+│   │   ├── scene_compose.py    # Compose floor + ball + arm
+│   │   ├── models/arms/        # MuJoCo Menagerie arms (panda, ur5e, aloha, etc.)
+│   │   └── training/           # arm_train_mac, run_simulation, eval_model
+│   ├── ainex_soccer/           # AINex humanoid scene + training
 │   │   ├── env.py
 │   │   ├── models/
 │   │   ├── policies/
@@ -130,8 +141,7 @@ reach/
 │   ├── cartpole/
 │   └── industrial_arm_reaching_with_welding/
 │
-├── logs/                        # Generated training/eval logs
-│
+├── logs/                       # Generated training/eval logs
 ├── website/
 │   ├── index.html
 │   ├── team.html
@@ -139,7 +149,7 @@ reach/
 │   ├── documents.html
 │   └── assets/
 │
-└── .venv/                       # Virtual environment (ignored by Git)
+└── .venv/                      # Virtual environment (ignored by Git)
 ```
 
 ---
@@ -197,11 +207,102 @@ Works headless (no display). On Monsoon, use `./cluster/test_monsoon.sh` or `sba
 
 ---
 
+## Arm Reach Training (Primary Workflow)
+
+The **arm reach** scene trains robotic arms to reach a ball. You upload only the arm; the scene (floor + ball) is composed at load time. Training and ball sampling adapt to the arm's length and DOF.
+
+### How It Works
+
+- **YAML-driven:** `config/arms.yaml` defines which arm, ball mode, train/run settings.
+- **Auto-discovery:** Arms from [MuJoCo Menagerie](https://mujoco.readthedocs.io/en/stable/models.html) are auto-detected; EE sites and reach are inferred from MJCF.
+- **CLI overrides:** No YAML edits needed—use `--arm-id`, `--steps`, etc. to tweak for any arm.
+- **Single workflow:** Same commands for all arms (panda, ur5e, aloha, etc.).
+
+### Supported Arms
+
+| arm_id     | Model                    |
+|------------|---------------------------|
+| arm_2link  | 2-link demo arm           |
+| panda      | Franka Emika Panda        |
+| fr3        | Franka FR3                |
+| ur5e       | Universal Robots UR5e     |
+| ur10e      | Universal Robots UR10e    |
+| iiwa14     | KUKA LBR iiwa14           |
+| xarm7      | UFACTORY xArm7            |
+| sawyer     | Rethink Robotics Sawyer   |
+| lite6      | UFactory Lite 6           |
+| vx300s     | Trossen ViperX 300 6DOF   |
+| wx250s     | Trossen WidowX 250 6DOF   |
+| aloha      | ALOHA 2 (dual arm)        |
+| unitree_z1, z1 | Unitree Z1            |
+
+### Train and Run
+
+From project root:
+
+```bash
+# Train (default: panda, 300k steps)
+python scripts/train.py
+
+# Run in viewer (default: panda). macOS: use mjpython for MuJoCo passive viewer
+mjpython scripts/run.py
+```
+
+### CLI Overrides
+
+```bash
+# Train different arm / steps / ball mode
+python scripts/train.py --arm-id aloha
+python scripts/train.py --arm-id ur5e --steps 500000
+python scripts/train.py --arm-id aloha --per-arm-policies
+
+# Run different arm / policy / steps
+mjpython scripts/run.py --arm-id aloha
+mjpython scripts/run.py --arm-id ur5e --model policies/ppo_arms_ur5e_mac_500k.zip
+mjpython scripts/run.py --arm-id aloha --per-arm-policies
+```
+
+### Config (`config/arms.yaml`)
+
+- **scene.arm_id** – which arm (e.g. `panda`, `ur5e`, `aloha`)
+- **scene.ball_mode** – `shared` (1 ball, all arms) or `per_arm` (N balls for N arms)
+- **scene.per_arm_policies** – `true` = train/run separate policy per arm (multi-arm only)
+- **train.total_steps** – default 300000
+- **train.policy_dir** – where to save policies (default: `policies/`)
+- **train.reward_time_penalty**, **train.reward_smoothness** – reward shaping
+- **run.steps**, **run.deterministic**, **run.debug**, **run.stochastic**
+
+Env vars **ARM_ID**, **TOTAL_STEPS**, **MODEL_PATH**, **USE_MPS** override YAML. CLI flags take precedence.
+
+### Policy Paths
+
+Policies are saved to `policies/ppo_arms_<arm_id>_mac_<k>k.zip` (e.g. `policies/ppo_arms_aloha_mac_300k.zip`). The run script derives the path from `--arm-id` and config; use `--model` to override.
+
+### Eval (metrics only)
+
+```bash
+python -m scenes.arms.training.eval_model --model policies/ppo_arms_panda_mac_300k.zip --arm-id panda
+```
+
+### Adding Another Arm
+
+1. Copy the arm from Menagerie into `scenes/arms/models/arms/<arm_id>/`.
+2. Name the main XML `arm.xml`, `<arm_id>.xml`, or `scene.xml`.
+3. Use `--arm-id <arm_id>` and train/run. EE sites and reach are inferred from MJCF.
+
+For manual override, add an entry in `scenes/arms/arm_registry.py`. See `scenes/arms/README.md` for details.
+
+---
+
 ## YAML Configuration
 
-The **`config/render_run.yaml`** file defines what model, policy, and environment are used for rendering.
+### Arm Reach (`config/arms.yaml`)
 
-Example:
+Used by `scripts/train.py` and `scripts/run.py`. See [Arm Reach Training](#arm-reach-training-primary-workflow) above.
+
+### Legacy Rendering (`config/render_run.yaml`)
+
+Defines what model, policy, and environment are used for rendering (AINex, industrial Z1, etc.):
 
 ```yaml
 scene:
@@ -219,12 +320,7 @@ run:
 
 ### To Change What’s Rendered
 
-Edit the following fields:
-
-- `scene.env_class`: Path to the environment Python class
-- `scene.model_xml`: Path to the MuJoCo XML model
-- `policy.path`: Path to the trained PPO policy `.zip`
-- `run.*`: Adjust runtime parameters like episode count or duration
+Edit `scene.env_class`, `scene.model_xml`, `policy.path`, and `run.*` to change what is rendered.
 
 ---
 
@@ -298,7 +394,14 @@ The job runs in the background; you can disconnect. On success, policies are pus
 
 ## macOS (M-Series) Instructions
 
-### Render a trained PPO policy
+### Arm reach (train + run)
+
+```bash
+python scripts/train.py --arm-id panda
+mjpython scripts/run.py --arm-id panda
+```
+
+### Render a trained PPO policy (legacy)
 
 ```bash
 .venv/bin/mjpython renders/render_demo_mac.py --config config/render_run.yaml
@@ -310,15 +413,20 @@ The job runs in the background; you can disconnect. On success, policies are pus
 .venv/bin/mjpython renders/render_model_mac.py --config config/render_run.yaml
 ```
 
-> **Note:**
-> macOS requires **mjpython** to open MuJoCo’s passive viewer using Metal graphics.
-> The YAML file defines which model and policy are rendered, so no command-line flags are needed beyond the config path.
+> **Note:** macOS requires **mjpython** to open MuJoCo's passive viewer using Metal graphics. For arm reach, use `scripts/run.py`; for legacy scenes, the YAML file defines which model and policy are rendered.
 
 ---
 
 ## Windows / Linux (x86 / CUDA) Instructions
 
-### Render a trained PPO policy
+### Arm reach (train + run)
+
+```bash
+python scripts/train.py --arm-id panda
+python scripts/run.py --arm-id panda
+```
+
+### Render a trained PPO policy (legacy)
 
 ```bash
 .venv\Scripts\python.exe renders\render_demo.py --config config\render_run.yaml
@@ -344,9 +452,10 @@ The job runs in the background; you can disconnect. On success, policies are pus
 
 - Always activate your `.venv` before running scripts.
 - macOS users **must** use `mjpython` for rendering; Windows/Linux use `python`.
-- All runtime parameters are now controlled in `config/render_run.yaml`.
+- **Arm reach:** Use `scripts/train.py` and `scripts/run.py` with `--arm-id` to train/run any arm. Policies save to `policies/` at project root.
+- **Legacy scenes:** `config/render_run.yaml` controls AINex and industrial arm rendering.
 - You can switch to any other scene by updating the YAML paths — no code changes required.
-- Large `.zip` policy files should remain inside their scene’s `/policies` folder.
+- Large `.zip` policy files: arm reach uses `policies/`; other scenes use `scenes/<name>/policies/`.
 
 ---
 
@@ -370,15 +479,16 @@ Use `mjpython` instead of `python` on macOS:
 
 ### Policy not found
 
-Ensure your trained PPO policy exists at:
-
-```
-scenes/<scene_name>/policies/<policy_name>.zip
-```
+- **Arm reach:** Policies are in `policies/ppo_arms_<arm_id>_mac_<k>k.zip`. Ensure you pass `--arm-id` matching the trained arm, or use `--model <path>` to specify the policy.
+- **Other scenes:** Policies may be in `scenes/<scene_name>/policies/<policy_name>.zip`.
 
 ### Viewer closes instantly
 
-Check your model XML path in `config/render_run.yaml` — MuJoCo closes the window immediately if the model fails to load.
+Check your model XML path in `config/render_run.yaml`—MuJoCo closes the window immediately if the model fails to load.
+
+### Arm does not move in viewer
+
+Pass `--debug` to print action norms. If norm is ~0, retrain with more steps (`--steps 500000`) or try `--stochastic` when running.
 
 ---
 

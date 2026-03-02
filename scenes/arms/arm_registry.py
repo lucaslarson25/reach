@@ -35,23 +35,121 @@ def _project_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+# MuJoCo Menagerie arms: https://mujoco.readthedocs.io/en/stable/models.html (Arms)
 ARM_REGISTRY: dict[str, ArmConfig] = {
-    "z1": ArmConfig(
-        name="Unitree Z1",
-        arm_path="arms/z1/z1_arm.xml",
-        ee_site_name="eetip",
-        reach_min=0.12,
-        reach_max=0.55,
-        home_keyframe_name="home",
-        scene_path_fallback="scenes/industrial_arm_reaching/models/z1scene.xml",
-    ),
     "arm_2link": ArmConfig(
-        name="2-link arm",
+        name="2-link arm (demo)",
         arm_path="arms/arm_2link/arm.xml",
         ee_site_name="ee_site",
         reach_min=0.05,
         reach_max=0.38,
         home_keyframe_name="home",
+    ),
+    "panda": ArmConfig(
+        name="Franka Emika Panda",
+        arm_path="arms/panda/panda_nohand.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.15,
+        reach_max=0.85,
+        home_keyframe_name="home",
+    ),
+    "fr3": ArmConfig(
+        name="Franka FR3",
+        arm_path="arms/fr3/fr3.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.15,
+        reach_max=0.9,
+        home_keyframe_name="home",
+    ),
+    "ur5e": ArmConfig(
+        name="Universal Robots UR5e",
+        arm_path="arms/ur5e/ur5e.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.15,
+        reach_max=0.85,
+        home_keyframe_name="home",
+    ),
+    "ur10e": ArmConfig(
+        name="Universal Robots UR10e",
+        arm_path="arms/ur10e/ur10e.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.2,
+        reach_max=1.3,
+        home_keyframe_name="home",
+    ),
+    "iiwa14": ArmConfig(
+        name="KUKA LBR iiwa14",
+        arm_path="arms/iiwa14/iiwa14.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.15,
+        reach_max=0.85,
+        home_keyframe_name="home",
+    ),
+    "xarm7": ArmConfig(
+        name="UFACTORY xArm7",
+        arm_path="arms/xarm7/xarm7_nohand.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.15,
+        reach_max=0.75,
+        home_keyframe_name="home",
+    ),
+    "sawyer": ArmConfig(
+        name="Rethink Robotics Sawyer",
+        arm_path="arms/sawyer/sawyer.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.15,
+        reach_max=0.84,
+        home_keyframe_name="home",
+    ),
+    "lite6": ArmConfig(
+        name="UFactory Lite 6",
+        arm_path="arms/lite6/lite6.xml",
+        ee_site_name="attachment_site",
+        reach_min=0.1,
+        reach_max=0.55,
+        home_keyframe_name="home",
+    ),
+    "vx300s": ArmConfig(
+        name="Trossen ViperX 300 6DOF",
+        arm_path="arms/vx300s/vx300s.xml",
+        ee_site_name="pinch",
+        reach_min=0.1,
+        reach_max=0.5,
+        home_keyframe_name="home",
+    ),
+    "wx250s": ArmConfig(
+        name="Trossen WidowX 250 6DOF",
+        arm_path="arms/wx250s/wx250s.xml",
+        ee_site_name="ee",
+        reach_min=0.1,
+        reach_max=0.45,
+        home_keyframe_name="home",
+    ),
+    "aloha": ArmConfig(
+        name="ALOHA 2 (dual arm, right EE)",
+        arm_path="arms/aloha/aloha.xml",
+        ee_site_name="right/gripper",
+        reach_min=0.2,
+        reach_max=0.6,
+        home_keyframe_name="home",
+    ),
+    "unitree_z1": ArmConfig(
+        name="Unitree Z1",
+        arm_path="arms/unitree_z1/z1.xml",
+        ee_site_name="eetip",
+        reach_min=0.12,
+        reach_max=0.55,
+        home_keyframe_name="home",
+    ),
+    # Legacy id: point to same arm as unitree_z1
+    "z1": ArmConfig(
+        name="Unitree Z1 (alias)",
+        arm_path="arms/unitree_z1/z1.xml",
+        ee_site_name="eetip",
+        reach_min=0.12,
+        reach_max=0.55,
+        home_keyframe_name="home",
+        scene_path_fallback="scenes/industrial_arm_reaching/models/z1scene.xml",
     ),
 }
 
@@ -62,11 +160,49 @@ def get_arm_config(arm_id: str | None) -> ArmConfig | None:
     return ARM_REGISTRY.get(arm_id)
 
 
+def get_arm_config_from_discovery(arm_id: str | None) -> dict[str, Any] | None:
+    """Auto-discover arm from models/arms/<arm_id>/ (drop MJCF into folder)."""
+    if not arm_id:
+        return None
+    from scenes.arms.arm_discovery import discover_all_arms
+    discovered = discover_all_arms()
+    return discovered.get(arm_id)
+
+
+def get_arm_info(arm_id: str | None) -> dict[str, Any] | None:
+    """
+    Unified arm info: discovery (preferred) or registry.
+    Returns dict: arm_path, ee_sites (list), reach_min, reach_max, actuator_groups, n_act, etc.
+    For multi-arm (e.g. ALOHA), ee_sites = [left/gripper, right/gripper].
+    """
+    if not arm_id:
+        return None
+    discovered = get_arm_config_from_discovery(arm_id)
+    if discovered:
+        return discovered
+    cfg = get_arm_config(arm_id)
+    if not cfg:
+        return None
+    return {
+        "arm_id": arm_id,
+        "arm_path": cfg.arm_path,
+        "ee_sites": [cfg.ee_site_name] if cfg.ee_site_name else [],
+        "actuator_groups": None,  # unknown for registry entries
+        "reach_min": cfg.reach_min,
+        "reach_max": cfg.reach_max or 0.5,
+        "n_act": None,
+        "n_q": None,
+        "home_keyframe_name": cfg.home_keyframe_name or "home",
+    }
+
+
 def get_registered_arm_ids() -> list[str]:
     return list(ARM_REGISTRY.keys())
 
 
-def resolve_model_path(arm_id: str | None, model_path: str | None) -> str:
+def resolve_model_path(
+    arm_id: str | None, model_path: str | None, ball_count: int = 1
+) -> str:
     """
     Resolve path to a loadable scene XML.
     - If model_path is set, return it (resolved to absolute).
@@ -83,21 +219,27 @@ def resolve_model_path(arm_id: str | None, model_path: str | None) -> str:
 
     aid = arm_id or "z1"
     cfg = get_arm_config(aid)
+    disc = get_arm_config_from_discovery(aid) if not cfg else None
+    if disc:
+        models_dir = get_models_dir()
+        arm_full = models_dir / disc["arm_path"]
+        if arm_full.exists():
+            return compose_scene(disc["arm_path"], aid, ball_count)
     if not cfg:
-        # Unknown arm_id; try composing with arm_id as path segment
+        # Fallback: try arm_id as path segment (e.g. models/arms/<aid>/)
         fallback = get_models_dir() / "arms" / aid
         if fallback.is_dir():
             for name in ("arm.xml", f"{aid}.xml", "scene.xml"):
                 candidate = fallback / name
                 if candidate.exists():
                     rel = f"arms/{aid}/{name}"
-                    return compose_scene(rel, aid)
+                    return compose_scene(rel, aid, ball_count)
         raise FileNotFoundError(f"Unknown arm_id={aid} and no model_path given.")
 
     models_dir = get_models_dir()
     arm_full = models_dir / cfg.arm_path
     if arm_full.exists():
-        return compose_scene(cfg.arm_path, aid)
+        return compose_scene(cfg.arm_path, aid, ball_count)
     if cfg.scene_path_fallback:
         return str((root / cfg.scene_path_fallback).resolve())
     raise FileNotFoundError(f"Arm XML not found: {arm_full}. Add it or set scene_path_fallback.")
