@@ -396,25 +396,31 @@ Legacy multi-arm reach env in `scenes/industrial_arm_reaching/`. Registry arms: 
 
 ## Training on NAU Monsoon HPC
 
-For long overnight training runs, use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/).
+For long training (1M–5M+ steps), use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/). Jobs run in the background—you can exit the server. On success, policies are pushed to `origin monsoon`; pull locally to get them.
 
-### Quick start (submit and leave)
+### Arm reach (recommended)
+
+**No batch jobs** (no SLURM failure emails): run in background with `nohup`; on success, auto-pushes and emails you.
 
 ```bash
-cd /scratch/YOUR_ID/reach   # or your repo path
-sbatch cluster/train_monsoon.sh
+cd /scratch/$USER/reach
+git checkout monsoon && git pull origin monsoon
+chmod +x cluster/run_arms_background.sh
+nohup ./cluster/run_arms_background.sh > logs/arms_train.log 2>&1 &
+# Edit the script to set ARM_ID, TIMESTEPS, EMAIL; or: ARM_ID=aloha TIMESTEPS=5000000 nohup ...
 ```
 
-The job runs in the background; you can disconnect. On success, policies are pushed to `origin monsoon`.
+After training completes (you'll get an email if `mail` works): `git checkout monsoon && git pull` then `mjpython scripts/run.py --arm-id panda`.
+
+**Batch job option:** `sbatch cluster/train_arms_monsoon.sh`
 
 ### Full workflow
 
-1. **Connect:** `ssh [NAU_ID]@monsoon.hpc.nau.edu` (or use [OnDemand](https://ondemand.hpc.nau.edu/))
-2. **Clone, setup:** See `documentation/monsoon_setup.md` for full instructions
-3. **Submit job:** `sbatch cluster/train_monsoon.sh`
-4. **Monitor (optional):** `squeue -u $USER` and `tail -f logs/monsoon_<JOBID>.out`
-5. **On success:** Policies are pushed to the `monsoon` branch
-6. **Team pull:** `git checkout monsoon && git pull` then run simulations locally
+1. **Connect:** `ssh [NAU_ID]@monsoon.hpc.nau.edu` (or [OnDemand](https://ondemand.hpc.nau.edu/))
+2. **Setup:** See `documentation/monsoon_setup.md` (venv, modules, scratch path)
+3. **Submit:** `sbatch cluster/train_arms_monsoon.sh`
+4. **Monitor:** `squeue -u $USER` and `tail -f logs/monsoon_arms_<JOBID>.out`
+5. **Pull locally:** `git checkout monsoon && git pull` when job succeeds
 
 ---
 

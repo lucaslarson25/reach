@@ -83,13 +83,13 @@ Monsoon needs to push to GitHub. You have two options:
 ## 3. Clone Repo and Create `monsoon` Branch
 
 ```bash
-cd ~/scratch   # or your preferred work dir
+cd /scratch/$USER   # NAU HPC: use /scratch/$USER (not ~/scratch on some nodes)
 git clone https://github.com/lucaslarson25/reach.git
 cd reach
 
-# Create and switch to monsoon branch
-git checkout -b monsoon
-git push -u origin monsoon
+# Switch to monsoon branch
+git checkout monsoon
+git pull origin monsoon
 ```
 
 ---
@@ -147,35 +147,48 @@ sbatch cluster/test_monsoon.sh
 
 ## 6. Submit Training Job
 
-**Run from the repo root** (so the job finds the repo):
+**Run from the repo root** (scratch path may differ—use `/scratch/$USER/reach` if `~/scratch` doesn't exist):
 
 ```bash
-cd ~/scratch/reach
-
-# Edit cluster/train_monsoon.sh if needed (TRAIN_SCRIPT, TIMESTEPS, SEED)
-sbatch cluster/train_monsoon.sh
+cd /scratch/$USER/reach
+git checkout monsoon
+git pull origin monsoon
 ```
 
-Or submit manually:
+### Arm reach (recommended for long training)
+
+**Option A: No batch jobs** (avoids SLURM failure emails)
+
+Runs in background with `nohup`; you can exit the server. On success, pushes to `monsoon` and emails you.
 
 ```bash
-sbatch --job-name=reach_train \
-       --gpus=a100:1 \
-       --time=12:00:00 \
-       --output=logs/monsoon_%j.out \
-       cluster/train_monsoon.sh
+cd /scratch/$USER/reach
+# Edit cluster/run_arms_background.sh: ARM_ID, TIMESTEPS, EMAIL
+chmod +x cluster/run_arms_background.sh
+nohup ./cluster/run_arms_background.sh > logs/arms_train.log 2>&1 &
+tail -f logs/arms_train.log   # watch progress; Ctrl+C to stop watching
+```
+
+Overrides: `ARM_ID=aloha TIMESTEPS=5000000 EMAIL=you@nau.edu nohup ./cluster/run_arms_background.sh > logs/arms_train.log 2>&1 &`
+
+**Option B: Batch job**
+
+```bash
+ARM_ID=panda TIMESTEPS=5000000 sbatch cluster/train_arms_monsoon.sh
+```
+
+### AINex (legacy)
+
+```bash
+sbatch cluster/train_monsoon.sh
 ```
 
 Monitor the job:
 
 ```bash
 squeue -u $USER
-```
-
-Check output:
-
-```bash
-tail -f logs/monsoon_<JOBID>.out
+tail -f logs/monsoon_arms_<JOBID>.out   # arm training
+tail -f logs/monsoon_<JOBID>.out        # AINex training
 ```
 
 ---
@@ -193,7 +206,7 @@ The `train_monsoon.sh` script:
 
 ---
 
-## 8. Team Pull and Run
+## 8. Pull Trained Policy and Run
 
 Once the job has pushed successfully (training completed without error):
 
@@ -204,14 +217,17 @@ git checkout monsoon
 git pull origin monsoon
 ```
 
-Then run the simulation:
+**Arm reach:**
 
 ```bash
-# macOS
-.venv/bin/mjpython renders/render_demo_mac.py --config config/ainex_reach.yaml
+mjpython scripts/run.py --arm-id panda   # macOS
+python scripts/run.py --arm-id panda     # Windows/Linux
+```
 
-# Windows/Linux
-python renders/render_demo.py --config config/ainex_reach.yaml
+**AINex (legacy):**
+
+```bash
+.venv/bin/mjpython renders/render_demo_mac.py --config config/ainex_reach.yaml
 ```
 
 ---
@@ -245,11 +261,14 @@ gpu_status
 
 | Issue | Solution |
 |-------|----------|
+| `~/scratch` not found | Use `/scratch/$USER` instead |
 | `Permission denied (publickey)` | Set up SSH key or use HTTPS + token |
-| `ModuleNotFoundError: mujoco` | Activate venv and ensure `pip install` completed |
-| `CUDA out of memory` | Reduce `--num-envs` or batch size in training script |
-| Job killed / timeout | Increase `--time` in SBATCH (e.g. 24:00:00) |
-| Push fails | Check git config; ensure token/key is valid |
+| `ModuleNotFoundError: mujoco` | Activate venv and ensure `pip install -r requirements-hpc.txt` completed |
+| Smoke test / AINex fails | Use `train_arms_monsoon.sh` (arm-only, skips AINex smoke test) |
+| `CUDA out of memory` | Reduce batch size in config or request different GPU |
+| Job killed / timeout | Increase `#SBATCH --time=48:00:00` or `72:00:00` in the script |
+| Push fails | Check git config; ensure token/key is valid; run `git config user.email` and `user.name` |
+| No email received | Some HPC systems don't support `mail` from login nodes. Run `which mail` to check. Use `tail -f logs/arms_train.log` to monitor instead. |
 
 ---
 
