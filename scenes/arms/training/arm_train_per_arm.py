@@ -57,7 +57,7 @@ class TerminationRatioCallback(BaseCallback):
         self.total_episodes = 0
 
 
-def make_env(arm_id, model_path, ball_mode, fix_arm_indices, reward_time_penalty, reward_smoothness, reward_move_away_penalty=0.5):
+def make_env(arm_id, model_path, ball_mode, fix_arm_indices, reward_time_penalty, reward_smoothness, reward_move_away_penalty=0.5, reward_style="z1", reach_min_fraction=None):
     def _init():
         return ArmReachEnv(
             arm_id=arm_id,
@@ -67,6 +67,8 @@ def make_env(arm_id, model_path, ball_mode, fix_arm_indices, reward_time_penalty
             reward_time_penalty=reward_time_penalty,
             reward_smoothness=reward_smoothness,
             reward_move_away_penalty=reward_move_away_penalty,
+            reward_style=reward_style,
+            reach_min_fraction=reach_min_fraction,
         )
 
     return _init
@@ -108,6 +110,8 @@ def main():
     reward_time_penalty = train.get("reward_time_penalty", 0.0005)
     reward_smoothness = train.get("reward_smoothness", 0.02)
     reward_move_away_penalty = train.get("reward_move_away_penalty", 0.5)
+    reward_style = train.get("reward_style", "z1")
+    reach_min_fraction = train.get("reach_min_fraction")
     use_mps_env = os.getenv("USE_MPS", "").strip().lower() in ("1", "true", "yes")
     use_mps = use_mps_env or train.get("use_mps", False)
 
@@ -128,7 +132,7 @@ def main():
         fix = set(range(n_arms)) - {arm_i}
         print(f"\n--- Training policy for arm {arm_i} (fixing arms {list(fix)}) ---")
         env = DummyVecEnv([
-            make_env(arm_id, model_path, ball_mode, fix, reward_time_penalty, reward_smoothness, reward_move_away_penalty)
+            make_env(arm_id, model_path, ball_mode, fix, reward_time_penalty, reward_smoothness, reward_move_away_penalty, reward_style, reach_min_fraction)
         ])
         policy_kwargs = dict(net_arch=[256, 256])
         model = PPO(

@@ -38,6 +38,8 @@ class ArmReachEnv(gym.Env):
         reward_time_penalty: float = 0.0005,
         reward_smoothness: float = 0.02,
         reward_move_away_penalty: float = 0.5,
+        reward_style: str = "z1",
+        reach_min_fraction: float | None = None,
         metrics_csv_path: str | None = None,
         disable_logging: bool = False,
     ):
@@ -49,6 +51,10 @@ class ArmReachEnv(gym.Env):
         - ee_site_name: end-effector site (single-arm); auto-resolved if None. Ignored if arm has multiple EEs.
         - reach_min / reach_max: ball sampling radius; from registry or discovery if not set.
         - ball_mode: "shared" (1 ball, all arms reach it) or "per_arm" (N balls, arm i reaches ball_i).
+        - reward_style: "z1" = match original Z1 industrial (0.05 action penalty, 50/50 ctrl blend,
+          no time/jerk/move-away penalties). "arms" = time/smoothness/move-away penalties, 70/30 blend.
+        - reach_min_fraction: if set (e.g. 0.45), ball min distance = this * reach_max. If None (Z1-style),
+          use registry reach_min only (easier curriculum).
         """
         super().__init__()
         self.render_mode = render_mode
@@ -62,6 +68,8 @@ class ArmReachEnv(gym.Env):
         self._reward_time_penalty = float(reward_time_penalty)
         self._reward_smoothness = float(reward_smoothness)
         self._reward_move_away_penalty = float(reward_move_away_penalty)
+        self._reward_style = (reward_style or "z1").lower()
+        self._reach_min_fraction = reach_min_fraction
 
         info = get_arm_info(arm_id)
         n_arms = len(info["ee_sites"]) if info and info.get("ee_sites") else 1
@@ -108,12 +116,12 @@ class ArmReachEnv(gym.Env):
                 self.model, self.data, self._ee_site_ids[0]
             )
             print("Computed reach_max =", round(_reach_max, 3))
-        # Ensure ball is not too close: min distance >= fraction of arm's max reach (scales with arm length)
-        _min_reach_fraction = 0.45
-        min_allowed = _min_reach_fraction * _reach_max
-        if _reach_min < min_allowed:
-            _reach_min = min_allowed
-            print("Reach min set to", round(_reach_min, 3), "(fraction of arm reach)")
+        # Z1-style: use registry reach_min only. "arms" style: enforce min fraction so ball is not too easy.
+        if self._reach_min_fraction is not None:
+            min_allowed = self._reach_min_fraction * _reach_max
+            if _reach_min < min_allowed:
+                _reach_min = min_allowed
+                print("Reach min set to", round(_reach_min, 3), "(fraction of arm reach)")
         self._reach_min = min(_reach_min, _reach_max * 0.98)
         self._reach_max = _reach_max
 
@@ -249,16 +257,21 @@ class ArmReachEnv(gym.Env):
             if arm_i < len(self._actuator_groups):
                 for a_idx in self._actuator_groups[arm_i]:
                     scaled[a_idx] = self.data.ctrl[a_idx]
-        # Blend 70% prev + 30% target for smoother, less violent motion
-        self.data.ctrl[:] = 0.7 * self.data.ctrl + 0.3 * scaled
+        # Z1-style: 50/50 blend (faster response, matched original Z1 industrial training). Otherwise 70/30.
+        blend_new = 0.5 if self._reward_style == "z1" else 0.3
+        self.data.ctrl[:] = (1.0 - blend_new) * self.data.ctrl + blend_new * scaled
         mujoco.mj_step(self.model, self.data)
         self.step_count += 1
         dists = []
-        reward = -0.1 * float(np.sum(np.square(action)))  # penalize large actions
-        reward -= self._reward_time_penalty
-        if hasattr(self, "_prev_action") and self._prev_action is not None:
-            jerk = float(np.sum(np.square(action - self._prev_action)))
-            reward -= self._reward_smoothness * jerk
+        # Z1-style (original industrial): 0.05 action penalty, no time/jerk/move-away penalties.
+        if self._reward_style == "z1":
+            reward = -0.05 * float(np.sum(np.square(action)))
+        else:
+            reward = -0.1 * float(np.sum(np.square(action)))
+            reward -= self._reward_time_penalty
+            if hasattr(self, "_prev_action") and self._prev_action is not None:
+                jerk = float(np.sum(np.square(action - self._prev_action)))
+                reward -= self._reward_smoothness * jerk
         self._prev_action = action.copy() if hasattr(action, "copy") else np.array(action)
         term_flags = []
         ori_sum = 0.0
@@ -273,9 +286,6 @@ class ArmReachEnv(gym.Env):
             dense = float((1.0 / ((1.0 + 10 * dist) ** 1.5)) * near)
             delta_d = prev_d - dist
             progress = float(np.clip(delta_d, -0.03, 0.03) * near)
-            # Explicit penalty for moving away from ball (scales with distance increase)
-            if delta_d < 0:
-                reward -= self._reward_move_away_penalty * min(-delta_d, 0.05) * near
             xmat = self.data.site_xmat[self._ee_site_ids[i]].reshape(3, 3)
             target_dir = ball_pos - ee_pos
             n = np.linalg.norm(target_dir)
@@ -284,8 +294,12 @@ class ArmReachEnv(gym.Env):
             ori = float(np.dot(xmat[:, 0], target_dir))
             ori_sum += ori
             reward += 3.0 * dense + 1.5 * progress + 0.45 * ori
+            # Same near-but-not-reached penalty as Z1 industrial
             if dist < 0.1 and dist >= 0.05:
                 reward -= 0.01
+            # Explicit move-away penalty only when not using Z1-style (Z1 used progress term only)
+            if self._reward_style != "z1" and delta_d < 0:
+                reward -= self._reward_move_away_penalty * min(-delta_d, 0.05) * near
             term_flags.append(dist < 0.05)
             if dist < 0.05:
                 reward += 550.0 / self._n_arms
