@@ -1,6 +1,10 @@
 """
 Arm auto-discovery: scan models/arms/ and infer DOF, reach, EE sites from MJCF.
 For multi-arm models (e.g. ALOHA), detects multiple EE sites and actuator groups.
+
+Arm MJCF requirements for correct training:
+  - End-effector site at the arm tip (named eetip, hand, gripper, attachment_site, etc.).
+  - Ball placement scales with arm length via inferred reach_max.
 """
 
 from __future__ import annotations
@@ -215,7 +219,9 @@ def discover_arm_config(arm_id: str, arm_dir: Path) -> dict[str, Any] | None:
         else:
             reach_max_list.append(0.5)
     reach_max = max(reach_max_list) if reach_max_list else 0.5
-    reach_min = max(0.08, 0.45 * reach_max)
+    # Z1-style: scale reach_min with arm length so ball placement adapts to short/long arms.
+    # 0.15 * reach_max (floor 0.05) allows closer targets than 0.45, matching industrial training.
+    reach_min = max(0.05, 0.15 * reach_max)
     return {
         "arm_id": arm_id,
         "arm_path": str(arm_rel).replace("\\", "/"),

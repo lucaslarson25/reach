@@ -284,3 +284,37 @@ def compute_reach_from_model(model: Any, data: Any, ee_site_id: int, n_samples: 
         if r > max_reach:
             max_reach = r
     return max(0.15, min(max_reach, 2.0))
+
+
+def compute_reach_min_from_model(
+    model: Any, data: Any, ee_site_id: int, n_samples: int = 300
+) -> float:
+    """
+    Compute minimum horizontal reach (inner workspace boundary) by sampling joint configs.
+    The EE cannot reach points closer than this—use as reach_min so the ball is always
+    reachable. Uses 10th percentile to avoid singularities / degenerate configs.
+    """
+    import numpy as np
+    import mujoco
+
+    np.random.seed(43)
+    distances = []
+    for _ in range(n_samples):
+        qpos = model.qpos0.copy()
+        for j in range(model.njnt):
+            adr = model.jnt_qposadr[j]
+            if model.jnt_type[j] in (mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE):
+                if model.jnt_limited[j]:
+                    qpos[adr] = np.random.uniform(model.jnt_range[j, 0], model.jnt_range[j, 1])
+                else:
+                    qpos[adr] = np.random.uniform(-np.pi, np.pi)
+        data.qpos[:] = qpos
+        mujoco.mj_forward(model, data)
+        pos = data.site_xpos[ee_site_id]
+        r = float(np.sqrt(pos[0] ** 2 + pos[1] ** 2))
+        distances.append(r)
+    if not distances:
+        return 0.15
+    # 10th percentile: conservative inner boundary, avoids singularities
+    p10 = float(np.percentile(distances, 10))
+    return max(0.05, min(p10, 0.5))

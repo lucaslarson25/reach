@@ -264,11 +264,14 @@ mjpython scripts/run.py --arm-id aloha --per-arm-policies
 
 ### Config (`config/arms.yaml`)
 
-- **scene.arm_id** – which arm (e.g. `panda`, `ur5e`, `aloha`)
+- **scene.arm_id** – which arm (e.g. `panda`, `ur5e`, `z1`, `aloha`)
 - **scene.ball_mode** – `shared` (1 ball, all arms) or `per_arm` (N balls for N arms)
 - **scene.per_arm_policies** – `true` = train/run separate policy per arm (multi-arm only)
 - **train.total_steps** – default 300000
 - **train.policy_dir** – where to save policies (default: `policies/`)
+- **train.reward_style** – `z1` (industrial-style reward) or `arms`
+- **train.reach_min_mode** – `auto` (infer ball range from arm model) or `registry`
+- **train.ee_priority_scale** – `true` = scale actions so joints near EE move more (reduces getting stuck)
 - **train.reward_time_penalty**, **train.reward_smoothness** – reward shaping
 - **run.steps**, **run.deterministic**, **run.debug**, **run.stochastic**
 

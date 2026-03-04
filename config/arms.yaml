@@ -5,6 +5,7 @@
 
 scene:
   arm_id: panda
+  # For Z1: set model_path: "scenes/industrial_arm_reaching/models/z1scene.xml" to use proven industrial scene
   model_path: null   # optional; null = use composed scene from registry
   ball_mode: shared   # "shared" = 1 ball, all arms reach; "per_arm" = N balls for N arms
   per_arm_policies: false  # true = train/run separate policy per arm (multi-arm only)
@@ -14,7 +15,14 @@ train:
   # Match original Z1 industrial training (worked well): reward_style "z1" = no time/jerk/move-away
   # penalties, 0.05 action penalty, 50/50 ctrl blend, registry reach_min only.
   reward_style: z1   # "z1" | "arms"
-  reach_min_fraction: null  # null = use registry reach_min only (Z1-style). 0.45 = harder (ball farther)
+  # reach_min_mode: "auto" = infer from arm model (samples workspace, uses 10th percentile)
+  #   "registry" = use fraction/floor overrides below
+  reach_min_mode: "auto"
+  reach_min_fraction: null  # when registry mode: min = this * reach_max (e.g. 0.55)
+  reach_min_floor: null     # when registry mode: ball never closer than this (m)
+  # Scale actions so joints closer to EE move more (reduces getting stuck)
+  ee_priority_scale: true
+  ctrl_blend_new: null      # null = 0.5 (z1) or 0.3 (arms). Lower (e.g. 0.4) = smoother motion
   reward_time_penalty: 0.0005
   reward_smoothness: 0.02
   reward_move_away_penalty: 0.5
