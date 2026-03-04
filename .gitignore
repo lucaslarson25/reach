@@ -101,6 +101,13 @@ tmp/
 temp/
 *.tmp
 
+# macOS duplicate files (filename 2.ext, filename 2)
+* 2.*
+* 2
+
+# MuJoCo menagerie tmp
+_menagerie_tmp/
+
 # Environment variables
 .env
 .env.local

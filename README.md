@@ -264,11 +264,14 @@ mjpython scripts/run.py --arm-id aloha --per-arm-policies
 
 ### Config (`config/arms.yaml`)
 
-- **scene.arm_id** – which arm (e.g. `panda`, `ur5e`, `aloha`)
+- **scene.arm_id** – which arm (e.g. `panda`, `ur5e`, `z1`, `aloha`)
 - **scene.ball_mode** – `shared` (1 ball, all arms) or `per_arm` (N balls for N arms)
 - **scene.per_arm_policies** – `true` = train/run separate policy per arm (multi-arm only)
 - **train.total_steps** – default 300000
 - **train.policy_dir** – where to save policies (default: `policies/`)
+- **train.reward_style** – `z1` (industrial-style reward) or `arms`
+- **train.reach_min_mode** – `auto` (infer ball range from arm model) or `registry`
+- **train.ee_priority_scale** – `true` = scale actions so joints near EE move more (reduces getting stuck)
 - **train.reward_time_penalty**, **train.reward_smoothness** – reward shaping
 - **run.steps**, **run.deterministic**, **run.debug**, **run.stochastic**
 
@@ -368,27 +371,59 @@ Uses **action groups** for leg walking (from `assets/action_groups/csv/`) and **
 
 ---
 
+## Other Scenes
+
+### Cartpole
+
+Jupyter notebooks for experimentation and analysis (`scenes/cartpole/`): `01_environment_testing.ipynb`, `02_policy_analysis.ipynb`, `03_reward_tuning.ipynb`, `04_data_analysis.ipynb`, `05_visualization.ipynb`. Run `jupyter notebook` or `jupyter lab`.
+
+### Humanoid / Legs
+
+- **scenes/humanoid/** – Placeholder for full-body humanoid scenes. AINex humanoid content is under `scenes/ainex_soccer/`.
+- **scenes/legs/** – Placeholder for legs-only scenes (bipedal walking, quadruped, etc.).
+
+### Image Recognition (Gesture Control)
+
+MediaPipe + PyTorch gesture recognition (handshake, fist bump, high five). Integrates with MuJoCo for gesture-controlled robot reaching.
+
+**Collect data:** `python scenes/image_recognition/training/collect_gesture_data.py` (target: ≥100 samples per gesture)  
+**Train:** `python scenes/image_recognition/training/train_gesture_classifier.py --data-dir scenes/image_recognition/data --model-type lstm`  
+**Inference:** `python scenes/image_recognition/training/infer_gesture.py --model-path scenes/image_recognition/models/gesture_classifier.pth`  
+**Gesture-controlled demo:** `python scenes/image_recognition/integration/demo_gesture_control.py --model-path scenes/image_recognition/models/gesture_classifier.pth`
+
+### Industrial Arm Reaching (Legacy)
+
+Legacy multi-arm reach env in `scenes/industrial_arm_reaching/`. Registry arms: z1, arm_2link. Train with `ARM_ID=z1 python -m scenes.industrial_arm_reaching.training.arm_train_mac`. For new arms, prefer `scenes/arms/` with `scripts/train.py`.
+
+---
+
 ## Training on NAU Monsoon HPC
 
-For long overnight training runs, use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/).
+For long training (1M–5M+ steps), use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/). Jobs run in the background—you can exit the server. On success, policies are pushed to `origin monsoon`; pull locally to get them.
 
-### Quick start (submit and leave)
+### Arm reach (recommended)
+
+**No batch jobs** (no SLURM failure emails): run in background with `nohup`; on success, auto-pushes and emails you.
 
 ```bash
-cd /scratch/YOUR_ID/reach   # or your repo path
-sbatch cluster/train_monsoon.sh
+cd /scratch/$USER/reach
+git checkout monsoon && git pull origin monsoon
+chmod +x cluster/run_arms_background.sh
+nohup ./cluster/run_arms_background.sh > logs/arms_train.log 2>&1 &
+# Edit the script to set ARM_ID, TIMESTEPS, EMAIL; or: ARM_ID=aloha TIMESTEPS=5000000 nohup ...
 ```
 
-The job runs in the background; you can disconnect. On success, policies are pushed to `origin monsoon`.
+After training completes (you'll get an email if `mail` works): `git checkout monsoon && git pull` then `mjpython scripts/run.py --arm-id panda`.
+
+**Batch job option:** `sbatch cluster/train_arms_monsoon.sh`
 
 ### Full workflow
 
-1. **Connect:** `ssh [NAU_ID]@monsoon.hpc.nau.edu` (or use [OnDemand](https://ondemand.hpc.nau.edu/))
-2. **Clone, setup:** See `documentation/monsoon_setup.md` for full instructions
-3. **Submit job:** `sbatch cluster/train_monsoon.sh`
-4. **Monitor (optional):** `squeue -u $USER` and `tail -f logs/monsoon_<JOBID>.out`
-5. **On success:** Policies are pushed to the `monsoon` branch
-6. **Team pull:** `git checkout monsoon && git pull` then run simulations locally
+1. **Connect:** `ssh [NAU_ID]@monsoon.hpc.nau.edu` (or [OnDemand](https://ondemand.hpc.nau.edu/))
+2. **Setup:** See `documentation/monsoon_setup.md` (venv, modules, scratch path)
+3. **Submit:** `sbatch cluster/train_arms_monsoon.sh`
+4. **Monitor:** `squeue -u $USER` and `tail -f logs/monsoon_arms_<JOBID>.out`
+5. **Pull locally:** `git checkout monsoon && git pull` when job succeeds
 
 ---
 

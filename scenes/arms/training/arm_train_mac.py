@@ -53,14 +53,21 @@ class TerminationRatioCallback(BaseCallback):
         self.total_episodes = 0
 
 
-def make_env(arm_id=None, model_path=None, ball_mode=None, reward_time_penalty=None, reward_smoothness=None):
+def make_env(arm_id=None, model_path=None, ball_mode=None, reward_time_penalty=None, reward_smoothness=None, reward_move_away_penalty=None, reward_style=None, reach_min_mode=None, reach_min_fraction=None, reach_min_floor=None, ee_priority_scale=True, ctrl_blend_new=None):
     def _init():
         return ArmReachEnv(
             arm_id=arm_id,
             model_path=model_path,
             ball_mode=ball_mode or "shared",
-            reward_time_penalty=reward_time_penalty or 0.001,
-            reward_smoothness=reward_smoothness or 0.01,
+            reward_time_penalty=reward_time_penalty or 0.0005,
+            reward_smoothness=reward_smoothness or 0.02,
+            reward_move_away_penalty=reward_move_away_penalty or 0.5,
+            reward_style=reward_style or "z1",
+            reach_min_mode=reach_min_mode or "auto",
+            reach_min_fraction=reach_min_fraction,
+            reach_min_floor=reach_min_floor,
+            ee_priority_scale=ee_priority_scale,
+            ctrl_blend_new=ctrl_blend_new,
         )
     return _init
 
@@ -95,8 +102,15 @@ def main():
     scene["arm_id"] = arm_id
     scene["ball_mode"] = ball_mode
     scene["per_arm_policies"] = per_arm_policies
-    reward_time_penalty = train.get("reward_time_penalty", 0.001)
-    reward_smoothness = train.get("reward_smoothness", 0.01)
+    reward_time_penalty = train.get("reward_time_penalty", 0.0005)
+    reward_smoothness = train.get("reward_smoothness", 0.02)
+    reward_move_away_penalty = train.get("reward_move_away_penalty", 0.5)
+    reward_style = train.get("reward_style", "z1")
+    reach_min_mode = train.get("reach_min_mode", "auto")
+    reach_min_fraction = train.get("reach_min_fraction")
+    reach_min_floor = train.get("reach_min_floor")
+    ee_priority_scale = train.get("ee_priority_scale", True)
+    ctrl_blend_new = train.get("ctrl_blend_new")
     total_timesteps = args.steps or int(os.getenv("TOTAL_STEPS", str(train.get("total_steps", 300000))))
     use_mps_env = os.getenv("USE_MPS", "").strip().lower() in ("1", "true", "yes")
     use_mps = use_mps_env or train.get("use_mps", False)
@@ -118,7 +132,7 @@ def main():
         for arm_i in range(n_arms):
             fix = set(range(n_arms)) - {arm_i}
             print(f"\n--- Training arm {arm_i} (fixing {list(fix)}) ---")
-            env = DummyVecEnv([per_arm_make_env(arm_id, model_path, ball_mode, fix, reward_time_penalty, reward_smoothness)])
+            env = DummyVecEnv([per_arm_make_env(arm_id, model_path, ball_mode, fix, reward_time_penalty, reward_smoothness, reward_move_away_penalty, reward_style, reach_min_mode, reach_min_fraction, reach_min_floor, ee_priority_scale, ctrl_blend_new)])
             model = PPO("MlpPolicy", env, policy_kwargs=dict(net_arch=[256, 256]),
                 device="mps" if (use_mps and th.backends.mps.is_available()) else "cpu",
                 n_steps=train.get("n_steps", 2048), batch_size=train.get("batch_size", 128),
@@ -145,6 +159,13 @@ def main():
             ball_mode=ball_mode,
             reward_time_penalty=reward_time_penalty,
             reward_smoothness=reward_smoothness,
+            reward_move_away_penalty=reward_move_away_penalty,
+            reward_style=reward_style,
+            reach_min_mode=reach_min_mode,
+            reach_min_fraction=reach_min_fraction,
+            reach_min_floor=reach_min_floor,
+            ee_priority_scale=ee_priority_scale,
+            ctrl_blend_new=ctrl_blend_new,
         )
     ])
     policy_kwargs = dict(net_arch=[256, 256])
