@@ -61,9 +61,24 @@ def main():
     num_cpu = max(1, os.cpu_count())
     print("Parallel envs:", num_cpu)
     env = SubprocVecEnv([make_env(i, arm_id=arm_id, model_path=model_path) for i in range(num_cpu)])
+    # PPO defaults aligned with config/arms.yaml (no config file loaded here)
     model = PPO(
-        "MlpPolicy", env, policy_kwargs=dict(net_arch=[256, 256]),
-        device="cuda", n_steps=2048, batch_size=64, n_epochs=10, learning_rate=3e-4, verbose=1,
+        "MlpPolicy",
+        env,
+        policy_kwargs=dict(net_arch=[256, 256]),
+        device="cuda",
+        n_steps=2048,
+        batch_size=64,
+        n_epochs=10,
+        learning_rate=3e-4,
+        clip_range=0.2,
+        gamma=0.99,
+        gae_lambda=0.95,
+        vf_coef=0.5,
+        ent_coef=0.01,
+        max_grad_norm=0.5,
+        verbose=1,
+        seed=42,
     )
     total_timesteps = 300_000
     model.learn(total_timesteps=total_timesteps, callback=CallbackList([ProgressBarCallback(), TerminationRatioCallback()]))

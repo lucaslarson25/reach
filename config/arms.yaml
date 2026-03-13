@@ -15,23 +15,31 @@ train:
   # Match original Z1 industrial training (worked well): reward_style "z1" = no time/jerk/move-away
   # penalties, 0.05 action penalty, 50/50 ctrl blend, registry reach_min only.
   reward_style: z1   # "z1" | "arms"
-  # reach_min_mode: "auto" = infer from arm model (samples workspace, uses 10th percentile)
-  #   "registry" = use fraction/floor overrides below
-  reach_min_mode: "auto"
+  # Ball placement (Z1 industrial: 0.12-0.55m → easier targets, higher success rate)
+  # reach_min_mode: "registry" = use arm registry values (closer balls); "auto" = infer from model
+  reach_min_mode: "registry"
   reach_min_fraction: null  # when registry mode: min = this * reach_max (e.g. 0.55)
   reach_min_floor: null     # when registry mode: ball never closer than this (m)
-  # Scale actions so joints closer to EE move more (reduces getting stuck)
-  ee_priority_scale: true
+  # Cap ball max distance (m). Z1 uses 0.55; Panda default 0.85. Lower = easier curriculum.
+  reach_max_cap: 0.6
+  # ee_priority_scale: if true, scale actions (base vs distal). false = no scaling, policy learns on its own (Z1-style).
+  ee_priority_scale: false
   ctrl_blend_new: null      # null = 0.5 (z1) or 0.3 (arms). Lower (e.g. 0.4) = smoother motion
   reward_time_penalty: 0.0005
   reward_smoothness: 0.02
   reward_move_away_penalty: 0.5
   policy_dir: policies
-  # PPO (optional overrides; defaults used if omitted)
+  # PPO hyperparameters (aligned with best practice; SB3 defaults if omitted)
   n_steps: 2048
-  batch_size: 128
+  batch_size: 64
   n_epochs: 10
   learning_rate: 0.0003
+  clip_range: 0.2
+  gamma: 0.99
+  gae_lambda: 0.95
+  vf_coef: 0.5
+  ent_coef: 0.01     # slight exploration (0.0 = SB3 default)
+  max_grad_norm: 0.5
   seed: 42
   device: null       # null = auto (mps on Mac if available else cpu)
   use_mps: false

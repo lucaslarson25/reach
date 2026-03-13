@@ -88,7 +88,7 @@ reach/
 │   └── action_groups/          # raw (.d6a) and csv exports
 ├── config/
 │   ├── arms.yaml               # Arm reach: arm_id, ball_mode, train/run settings
-│   ├── render_run.yaml         # Legacy: scene, model, policy for rendering
+│   ├── arm_overrides.yaml      # Per-arm overrides (reach, initial pose, penalties)
 │   ├── ainex_render.yaml       # AINex stand config
 │   ├── ainex_reach.yaml        # AINex reach config
 │   └── arms_loader.py          # Loads arms.yaml, resolves policy paths
@@ -480,6 +480,17 @@ python scripts/run.py --arm-id panda
 > import torch
 > print(torch.cuda.is_available())
 > ```
+
+---
+
+## Adding a New Arm
+
+You can train the ball-reaching policy on **any arm** by adding it to the registry or models directory. Per-arm overrides handle geometry-specific issues (erratic motion, bimanual start poses, self-collision).
+
+- **Quick add:** Place MJCF in `scenes/arms/models/arms/<arm_id>/` and run  
+  `python scripts/train.py --arm-id <arm_id>`
+- **If problems occur:** Edit `config/arm_overrides.yaml` for that arm (tighter ball band, random init, joint-limit penalty).
+- **Full guide:** [documentation/adding_new_arm.md](documentation/adding_new_arm.md)
 
 ---
 

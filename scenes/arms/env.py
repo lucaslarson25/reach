@@ -45,6 +45,9 @@ class ArmReachEnv(gym.Env):
         reach_min_floor: float | None = None,
         ee_priority_scale: bool = True,
         ctrl_blend_new: float | None = None,
+        initial_pose: str = "home",
+        initial_keyframe: str | None = None,
+        joint_limit_margin_penalty: float | None = None,
         metrics_csv_path: str | None = None,
         disable_logging: bool = False,
     ):
@@ -59,8 +62,11 @@ class ArmReachEnv(gym.Env):
         - reward_style: "z1" = match original Z1 industrial (0.05 action penalty, 50/50 ctrl blend,
           no time/jerk/move-away penalties). "arms" = time/smoothness/move-away penalties, 70/30 blend.
         - reach_min_mode: "auto" = infer reach_min from arm model; "registry" = use fraction/floor.
-        - ee_priority_scale: if True, scale actions so joints closer to EE have higher gain (smoother, less stuck).
+        - ee_priority_scale: if True, scale actions so base joints have higher gain, EE joints lower (coarse-then-fine reaching).
         - ctrl_blend_new: fraction of new ctrl per step (lower = smoother). None = use reward_style default.
+        - initial_pose: "home" = use keyframe/qpos0; "random" = sample qpos in joint limits (spreads bimanual arms).
+        - initial_keyframe: override keyframe name for reset (e.g. "spread"). None = use registry home.
+        - joint_limit_margin_penalty: if set, penalize joints within margin of limits (avoids self-folding).
         """
         super().__init__()
         self.render_mode = render_mode
@@ -80,6 +86,9 @@ class ArmReachEnv(gym.Env):
         self._reach_min_floor = reach_min_floor
         self._ee_priority_scale = bool(ee_priority_scale)
         self._ctrl_blend_new = ctrl_blend_new
+        self._initial_pose = (initial_pose or "home").lower()
+        self._initial_keyframe = initial_keyframe
+        self._joint_limit_margin_penalty = float(joint_limit_margin_penalty) if joint_limit_margin_penalty is not None else None
 
         info = get_arm_info(arm_id)
         n_arms = len(info["ee_sites"]) if info and info.get("ee_sites") else 1
@@ -146,10 +155,13 @@ class ArmReachEnv(gym.Env):
 
         self._home_keyframe_name = (cfg.home_keyframe_name if cfg else "home") or "home"
         self._has_home_key = False
+        self._has_reset_key = False
         for i in range(self.model.nkey):
-            if mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_KEY, i) == self._home_keyframe_name:
+            name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_KEY, i)
+            if name == self._home_keyframe_name:
                 self._has_home_key = True
-                break
+            if name == self._reset_keyframe:
+                self._has_reset_key = True
 
         n_act = self.model.nu
         if self._fix_arm_indices:
@@ -161,19 +173,30 @@ class ArmReachEnv(gym.Env):
             self._action_indices = act_indices
         else:
             self._action_indices = list(range(n_act))
-        # Per-actuator weights: higher for joints closer to EE (prioritize distal joints, reduce getting stuck)
+        # Per-actuator weights: base-first (proximal higher, distal lower) for coarse-then-fine reaching
         self._action_weights = np.ones(self.model.nu, dtype=np.float32)
         if self._ee_priority_scale and self._actuator_groups:
             for group in self._actuator_groups:
                 n = len(group)
                 for j, a_idx in enumerate(group):
-                    self._action_weights[a_idx] = 0.65 + 0.35 * (j / max(1, n - 1))
+                    # j=0 (base) -> 1.0, j=n-1 (distal) -> 0.65
+                    self._action_weights[a_idx] = 1.0 - 0.35 * (j / max(1, n - 1))
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(len(self._action_indices),), dtype=np.float32)
         # obs: qpos, qvel, then per arm: ee_pos(3), ball_pos(3), dist(1), dir_ee_to_ball(3), delta_dist(1)
         n_obs = self.model.nq + self.model.nv + self._n_arms * (3 + 3 + 1 + 3 + 1)
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32
         )
+
+        # Joint limits: (qpos_index, low, high) for limited hinge/slide joints (used for random init and limit penalty)
+        self._joint_limit_list: list[tuple[int, float, float]] = []
+        for j in range(self.model.njnt):
+            if self.model.jnt_type[j] in (mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE):
+                if self.model.jnt_limited[j]:
+                    adr = int(self.model.jnt_qposadr[j])
+                    lo, hi = float(self.model.jnt_range[j, 0]), float(self.model.jnt_range[j, 1])
+                    self._joint_limit_list.append((adr, lo, hi))
+        self._reset_keyframe = self._initial_keyframe or self._home_keyframe_name
 
         self.disable_logging = disable_logging
         if not disable_logging:
@@ -245,6 +268,19 @@ class ArmReachEnv(gym.Env):
                 int(m["success"]),
             ])
 
+    def _sample_random_qpos(self):
+        """Sample qpos uniformly inside joint limits (80% of range to avoid singularities)."""
+        self.data.qpos[:] = self.model.qpos0.copy()
+        rng = np.random.default_rng()
+        for adr, lo, hi in self._joint_limit_list:
+            span = hi - lo
+            margin = 0.1 * span
+            self.data.qpos[adr] = rng.uniform(lo + margin, hi - margin)
+        for i in range(self.model.nu):
+            j_id = int(self.model.actuator_trnid[i, 0])
+            qadr = int(self.model.jnt_qposadr[j_id])
+            self.data.ctrl[i] = self.data.qpos[qadr]
+
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.episode_count += 1
@@ -252,13 +288,18 @@ class ArmReachEnv(gym.Env):
             "step_count": 0, "distance_sum": 0.0, "distance_final": 0.0,
             "orientation_sum": 0.0, "action_norm_sum": 0.0, "reward_sum": 0.0, "success": False,
         }
-        if self._has_home_key:
+        if self._initial_pose == "random":
+            self._sample_random_qpos()
+        elif self._has_reset_key:
+            key = self.model.key(self._reset_keyframe)
+            self.data.qpos[:] = key.qpos
+            self.data.ctrl[:] = key.ctrl
+        elif self._has_home_key:
             key = self.model.key(self._home_keyframe_name)
             self.data.qpos[:] = key.qpos
             self.data.ctrl[:] = key.ctrl
         else:
             self.data.qpos[:] = self.model.qpos0
-            # Set ctrl to match current joint positions so the arm doesn't jump
             for i in range(self.model.nu):
                 j_id = int(self.model.actuator_trnid[i, 0])
                 qadr = int(self.model.jnt_qposadr[j_id])
@@ -342,6 +383,19 @@ class ArmReachEnv(gym.Env):
             term_flags.append(dist < 0.05)
             if dist < 0.05:
                 reward += 550.0 / self._n_arms
+        # Joint-limit margin penalty: discourages self-folding / singularities
+        if self._joint_limit_margin_penalty is not None and self._joint_limit_margin_penalty > 0 and self._joint_limit_list:
+            margin = 0.1
+            for adr, lo, hi in self._joint_limit_list:
+                q = float(self.data.qpos[adr])
+                span = hi - lo
+                if span <= 0:
+                    continue
+                t = (q - lo) / span
+                if t < margin:
+                    reward -= self._joint_limit_margin_penalty * (1.0 - t / margin)
+                elif t > 1.0 - margin:
+                    reward -= self._joint_limit_margin_penalty * (t - (1.0 - margin)) / margin
         self.prev_dists = dists
         # shared: any arm reaches; per_arm: all arms reach
         if self._ball_mode == "shared":

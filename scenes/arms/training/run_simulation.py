@@ -17,7 +17,7 @@ sys.path.insert(0, _REPO_ROOT)
 
 
 def main():
-    from config.arms_loader import load_arms_config, resolve_policy_path, resolve_policy_paths
+    from config.arms_loader import load_arms_config, apply_arm_overrides, resolve_policy_paths
     from scenes.arms.arm_registry import get_arm_info
 
     p = argparse.ArgumentParser(
@@ -35,6 +35,7 @@ def main():
 
     cfg = load_arms_config(args.config)
     arm_id = args.arm_id if args.arm_id is not None else cfg["scene"].get("arm_id", "panda")
+    cfg = apply_arm_overrides(cfg, arm_id)
     ball_mode = cfg["scene"].get("ball_mode", "shared")
     per_arm_policies = args.per_arm_policies or cfg["scene"].get("per_arm_policies", False)
     info = get_arm_info(arm_id)
@@ -48,8 +49,21 @@ def main():
     deterministic = not (args.stochastic or cfg["run"].get("stochastic", False))
     debug = args.debug or cfg["run"].get("debug", False)
 
-    # Create env with viewer; do NOT pass to PPO.load so it stays unwrapped and render() works
-    env = ArmReachEnv(arm_id=arm_id, render_mode="human", ball_mode=ball_mode)
+    # Create env with viewer; apply overrides for reach, initial_pose, etc.
+    scene = cfg["scene"]
+    train = cfg["train"]
+    env_kw = dict(arm_id=arm_id, render_mode="human", ball_mode=ball_mode)
+    if scene.get("initial_pose"):
+        env_kw["initial_pose"] = scene["initial_pose"]
+    if scene.get("initial_keyframe"):
+        env_kw["initial_keyframe"] = scene["initial_keyframe"]
+    if train.get("joint_limit_margin_penalty") is not None:
+        env_kw["joint_limit_margin_penalty"] = train["joint_limit_margin_penalty"]
+    if train.get("reach_max_cap") is not None:
+        env_kw["reach_max"] = train["reach_max_cap"]
+    if train.get("reach_min_mode"):
+        env_kw["reach_min_mode"] = train["reach_min_mode"]
+    env = ArmReachEnv(**env_kw)
 
     if per_arm_policies and n_arms > 1 and isinstance(policy_paths, list):
         models = [PPO.load(p) for p in policy_paths]

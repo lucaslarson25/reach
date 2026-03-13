@@ -5,6 +5,35 @@ import yaml
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
+ARM_OVERRIDES_PATH = os.path.join(REPO_ROOT, "config", "arm_overrides.yaml")
+
+
+def load_arm_overrides(arm_id: str) -> dict:
+    """Load per-arm overrides from config/arm_overrides.yaml. Returns {} if arm not listed."""
+    if not arm_id or not os.path.isfile(ARM_OVERRIDES_PATH):
+        return {}
+    with open(ARM_OVERRIDES_PATH, "r") as f:
+        raw = yaml.safe_load(f) or {}
+    overrides = raw.get(arm_id, {})
+    return dict(overrides) if isinstance(overrides, dict) else {}
+
+
+def apply_arm_overrides(cfg: dict, arm_id: str) -> dict:
+    """Merge arm_overrides for arm_id into cfg. Overrides go into scene/train as appropriate."""
+    ov = load_arm_overrides(arm_id)
+    if not ov:
+        return cfg
+    # Map override keys to scene vs train
+    scene_keys = {"model_path", "ball_mode", "per_arm_policies", "initial_pose", "initial_keyframe"}
+    train_keys = {"reach_min_mode", "reach_min_fraction", "reach_min_floor", "reach_max_cap",
+                  "ee_priority_scale", "joint_limit_margin_penalty"}
+    for k, v in ov.items():
+        if k in scene_keys:
+            cfg["scene"][k] = v
+        elif k in train_keys:
+            cfg["train"][k] = v
+    return cfg
+
 
 def load_arms_config(yaml_path: str) -> dict:
     """Load arms.yaml; paths stay relative to repo root (caller can resolve)."""

@@ -53,9 +53,30 @@ class TerminationRatioCallback(BaseCallback):
         self.total_episodes = 0
 
 
-def make_env(arm_id=None, model_path=None, ball_mode=None, reward_time_penalty=None, reward_smoothness=None, reward_move_away_penalty=None, reward_style=None, reach_min_mode=None, reach_min_fraction=None, reach_min_floor=None, ee_priority_scale=True, ctrl_blend_new=None):
+def get_ppo_kwargs(train, device):
+    """Build PPO kwargs from train config (config/arms.yaml). Uses SB3 defaults for omitted keys."""
+    return dict(
+        policy_kwargs=dict(net_arch=[256, 256]),
+        device=device,
+        n_steps=train.get("n_steps", 2048),
+        batch_size=train.get("batch_size", 64),
+        n_epochs=train.get("n_epochs", 10),
+        learning_rate=float(train.get("learning_rate", 3e-4)),
+        clip_range=float(train.get("clip_range", 0.2)),
+        gamma=float(train.get("gamma", 0.99)),
+        gae_lambda=float(train.get("gae_lambda", 0.95)),
+        vf_coef=float(train.get("vf_coef", 0.5)),
+        ent_coef=float(train.get("ent_coef", 0.0)),
+        max_grad_norm=float(train.get("max_grad_norm", 0.5)),
+        verbose=1,
+        seed=int(train.get("seed", 42)),
+    )
+
+
+def make_env(arm_id=None, model_path=None, ball_mode=None, reward_time_penalty=None, reward_smoothness=None, reward_move_away_penalty=None, reward_style=None, reach_min_mode=None, reach_min_fraction=None, reach_min_floor=None, reach_max_cap=None, ee_priority_scale=True, ctrl_blend_new=None, initial_pose="home", initial_keyframe=None, joint_limit_margin_penalty=None):
+    reach_max = float(reach_max_cap) if reach_max_cap is not None else None
     def _init():
-        return ArmReachEnv(
+        kwargs = dict(
             arm_id=arm_id,
             model_path=model_path,
             ball_mode=ball_mode or "shared",
@@ -69,12 +90,20 @@ def make_env(arm_id=None, model_path=None, ball_mode=None, reward_time_penalty=N
             ee_priority_scale=ee_priority_scale,
             ctrl_blend_new=ctrl_blend_new,
         )
+        if reach_max is not None:
+            kwargs["reach_max"] = reach_max
+        kwargs["initial_pose"] = initial_pose
+        if initial_keyframe is not None:
+            kwargs["initial_keyframe"] = initial_keyframe
+        if joint_limit_margin_penalty is not None:
+            kwargs["joint_limit_margin_penalty"] = joint_limit_margin_penalty
+        return ArmReachEnv(**kwargs)
     return _init
 
 
 def main():
     import argparse
-    from config.arms_loader import load_arms_config, REPO_ROOT
+    from config.arms_loader import load_arms_config, apply_arm_overrides, REPO_ROOT
 
     parser = argparse.ArgumentParser(
         description="Train PPO for arm reach. Default: panda, 300k steps. CLI overrides YAML.",
@@ -92,10 +121,11 @@ def main():
     args = parser.parse_args()
 
     cfg = load_arms_config(args.config)
+    arm_id = args.arm_id or os.getenv("ARM_ID", "").strip() or cfg["scene"].get("arm_id") or "panda"
+    cfg = apply_arm_overrides(cfg, arm_id)
     scene = cfg["scene"]
     train = cfg["train"]
 
-    arm_id = args.arm_id or os.getenv("ARM_ID", "").strip() or scene.get("arm_id") or "panda"
     model_path = os.getenv("MODEL_PATH", "").strip() or scene.get("model_path")
     ball_mode = args.ball_mode or scene.get("ball_mode", "shared")
     per_arm_policies = args.per_arm_policies or scene.get("per_arm_policies", False)
@@ -107,10 +137,14 @@ def main():
     reward_move_away_penalty = train.get("reward_move_away_penalty", 0.5)
     reward_style = train.get("reward_style", "z1")
     reach_min_mode = train.get("reach_min_mode", "auto")
+    reach_max_cap = train.get("reach_max_cap")
     reach_min_fraction = train.get("reach_min_fraction")
     reach_min_floor = train.get("reach_min_floor")
     ee_priority_scale = train.get("ee_priority_scale", True)
     ctrl_blend_new = train.get("ctrl_blend_new")
+    initial_pose = scene.get("initial_pose") or train.get("initial_pose") or "home"
+    initial_keyframe = scene.get("initial_keyframe")
+    joint_limit_margin_penalty = train.get("joint_limit_margin_penalty")
     total_timesteps = args.steps or int(os.getenv("TOTAL_STEPS", str(train.get("total_steps", 300000))))
     use_mps_env = os.getenv("USE_MPS", "").strip().lower() in ("1", "true", "yes")
     use_mps = use_mps_env or train.get("use_mps", False)
@@ -133,11 +167,8 @@ def main():
             fix = set(range(n_arms)) - {arm_i}
             print(f"\n--- Training arm {arm_i} (fixing {list(fix)}) ---")
             env = DummyVecEnv([per_arm_make_env(arm_id, model_path, ball_mode, fix, reward_time_penalty, reward_smoothness, reward_move_away_penalty, reward_style, reach_min_mode, reach_min_fraction, reach_min_floor, ee_priority_scale, ctrl_blend_new)])
-            model = PPO("MlpPolicy", env, policy_kwargs=dict(net_arch=[256, 256]),
-                device="mps" if (use_mps and th.backends.mps.is_available()) else "cpu",
-                n_steps=train.get("n_steps", 2048), batch_size=train.get("batch_size", 128),
-                n_epochs=train.get("n_epochs", 10), learning_rate=float(train.get("learning_rate", 3e-4)),
-                verbose=1, seed=int(train.get("seed", 42)))
+            device = "mps" if (use_mps and th.backends.mps.is_available()) else "cpu"
+            model = PPO("MlpPolicy", env, **get_ppo_kwargs(train, device))
             model.learn(total_timesteps=total_timesteps, callback=CallbackList([ProgressBarCallback(), TerminationRatioCallback()]))
             save_path = os.path.join(policy_dir, f"ppo_arms_{arm_id}_arm{arm_i}_mac_{k}k")
             model.save(save_path)
@@ -164,19 +195,15 @@ def main():
             reach_min_mode=reach_min_mode,
             reach_min_fraction=reach_min_fraction,
             reach_min_floor=reach_min_floor,
+            reach_max_cap=reach_max_cap,
             ee_priority_scale=ee_priority_scale,
             ctrl_blend_new=ctrl_blend_new,
+            initial_pose=initial_pose,
+            initial_keyframe=initial_keyframe,
+            joint_limit_margin_penalty=joint_limit_margin_penalty,
         )
     ])
-    policy_kwargs = dict(net_arch=[256, 256])
-    model = PPO(
-        "MlpPolicy", env, policy_kwargs=policy_kwargs, device=device,
-        n_steps=train.get("n_steps", 2048),
-        batch_size=train.get("batch_size", 128),
-        n_epochs=train.get("n_epochs", 10),
-        learning_rate=float(train.get("learning_rate", 3e-4)),
-        verbose=1, seed=int(train.get("seed", 42)),
-    )
+    model = PPO("MlpPolicy", env, **get_ppo_kwargs(train, device))
     callbacks = CallbackList([ProgressBarCallback(), TerminationRatioCallback()])
     print("Training for", total_timesteps, "timesteps...")
     model.learn(total_timesteps=total_timesteps, callback=callbacks)

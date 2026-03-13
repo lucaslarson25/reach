@@ -142,16 +142,21 @@ def main():
         env = DummyVecEnv([
             make_env(arm_id, model_path, ball_mode, fix, reward_time_penalty, reward_smoothness, reward_move_away_penalty, reward_style, reach_min_mode, reach_min_fraction, reach_min_floor, ee_priority_scale, ctrl_blend_new)
         ])
-        policy_kwargs = dict(net_arch=[256, 256])
         model = PPO(
             "MlpPolicy",
             env,
-            policy_kwargs=policy_kwargs,
+            policy_kwargs=dict(net_arch=[256, 256]),
             device=device,
             n_steps=train.get("n_steps", 2048),
-            batch_size=train.get("batch_size", 128),
+            batch_size=train.get("batch_size", 64),
             n_epochs=train.get("n_epochs", 10),
             learning_rate=float(train.get("learning_rate", 3e-4)),
+            clip_range=float(train.get("clip_range", 0.2)),
+            gamma=float(train.get("gamma", 0.99)),
+            gae_lambda=float(train.get("gae_lambda", 0.95)),
+            vf_coef=float(train.get("vf_coef", 0.5)),
+            ent_coef=float(train.get("ent_coef", 0.0)),
+            max_grad_norm=float(train.get("max_grad_norm", 0.5)),
             verbose=1,
             seed=int(train.get("seed", 42)),
         )
