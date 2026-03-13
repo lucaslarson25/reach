@@ -188,40 +188,42 @@
     </body>
   </worldbody>
 
-  <actuator>
+    <actuator>
+
     <!-- right leg -->
-    <position joint="r_hip_yaw" kp="50"/>
-    <position joint="r_hip_roll" kp="50"/>
-    <position joint="r_hip_pitch" kp="50"/>
-    <position joint="r_knee" kp="50"/>
-    <position joint="r_ank_pitch" kp="30"/>
-    <position joint="r_ank_roll" kp="30"/>
+    <position joint="r_hip_yaw"  kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="r_hip_roll" kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="r_hip_pitch" kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="r_knee" kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="r_ank_pitch" kp="30" ctrlrange="-2.09 2.09"/>
+    <position joint="r_ank_roll" kp="30" ctrlrange="-2.09 2.09"/>
 
     <!-- left leg -->
-    <position joint="l_hip_yaw" kp="50"/>
-    <position joint="l_hip_roll" kp="50"/>
-    <position joint="l_hip_pitch" kp="50"/>
-    <position joint="l_knee" kp="50"/>
-    <position joint="l_ank_pitch" kp="30"/>
-    <position joint="l_ank_roll" kp="30"/>
-    
+    <position joint="l_hip_yaw"  kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="l_hip_roll" kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="l_hip_pitch" kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="l_knee" kp="50" ctrlrange="-2.09 2.09"/>
+    <position joint="l_ank_pitch" kp="30" ctrlrange="-2.09 2.09"/>
+    <position joint="l_ank_roll" kp="30" ctrlrange="-2.09 2.09"/>
+
     <!-- head -->
-    <position joint="head_pan"  kp="10"/>
-    <position joint="head_tilt" kp="10"/>
+    <position joint="head_pan"  kp="10" ctrlrange="-2.09 2.09"/>
+    <position joint="head_tilt" kp="10" ctrlrange="-2.09 2.09"/>
 
     <!-- right arm -->
-    <position joint="r_sho_pitch" kp="20"/>
-    <position joint="r_sho_roll"  kp="20"/>
-    <position joint="r_el_pitch"  kp="15"/>
-    <position joint="r_el_yaw"    kp="15"/>
-    <position joint="r_gripper"   kp="10"/>
+    <position joint="r_sho_pitch" kp="20" ctrlrange="-2.09 2.09"/>
+    <position joint="r_sho_roll"  kp="20" ctrlrange="-2.09 2.09"/>
+    <position joint="r_el_pitch"  kp="15" ctrlrange="-2.09 2.09"/>
+    <position joint="r_el_yaw"    kp="15" ctrlrange="-2.09 2.09"/>
+    <position joint="r_gripper"   kp="10" ctrlrange="-2.09 2.09"/>
 
     <!-- left arm -->
-    <position joint="l_sho_pitch" kp="20"/>
-    <position joint="l_sho_roll"  kp="20"/>
-    <position joint="l_el_pitch"  kp="15"/>
-    <position joint="l_el_yaw"    kp="15"/>
-    <position joint="l_gripper"   kp="10"/>
+    <position joint="l_sho_pitch" kp="20" ctrlrange="-2.09 2.09"/>
+    <position joint="l_sho_roll"  kp="20" ctrlrange="-2.09 2.09"/>
+    <position joint="l_el_pitch"  kp="15" ctrlrange="-2.09 2.09"/>
+    <position joint="l_el_yaw"    kp="15" ctrlrange="-2.09 2.09"/>
+    <position joint="l_gripper"   kp="10" ctrlrange="-2.09 2.09"/>
+
   </actuator>
 
   <!-- keyframe removed to avoid qpos size mismatch after adding freejoint ball -->

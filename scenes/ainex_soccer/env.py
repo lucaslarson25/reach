@@ -153,13 +153,13 @@ class AINexReachEnv(gym.Env):
         max_steps: int = 600,
         disable_logging: bool = False,
         smooth_alpha: float = 0.85,
-        arm_joint_names: tuple[str, ...] = (
-            "r_sho_pitch",
-            "r_sho_roll",
-            "r_el_pitch",
-            "r_el_yaw",
-            "r_gripper",
-        ),
+        #arm_joint_names: tuple[str, ...] = (
+            #"r_sho_pitch",
+            #"r_sho_roll",
+            #"r_el_pitch",
+            #"r_el_yaw",
+            #"r_gripper",
+        #),
     ):
         super().__init__()
         self.render_mode = render_mode
@@ -177,11 +177,11 @@ class AINexReachEnv(gym.Env):
         self.model = mujoco.MjModel.from_xml_path(model_path)
         self.data = mujoco.MjData(self.model)
 
-        self._arm_joint_names = set(arm_joint_names)
-        self._arm_actuators, self._non_arm_actuators = self._split_actuators()
-        self._arm_qpos_adr, self._arm_ranges = self._arm_joint_targets()
+        # self._arm_joint_names = set(arm_joint_names)
+        # self._arm_actuators, self._non_arm_actuators = self._split_actuators()
+        # self._arm_qpos_adr, self._arm_ranges = self._arm_joint_targets()
 
-        n_act = len(self._arm_actuators)
+        n_act = self.model.nu  # total actuators
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(n_act,), dtype=np.float32)
 
         n_obs = self.model.nq + self.model.nv + 3 + 3
@@ -195,30 +195,30 @@ class AINexReachEnv(gym.Env):
         self._foot_geom_ids = self._find_foot_geoms()
 
         self._home_qpos = None
-        self._prev_action = np.zeros(n_act, dtype=np.float32)
+        self._prev_action = np.zeros(self.model.nu, dtype=np.float32)
 
-    def _split_actuators(self):
-        arm_actuators = []
-        non_arm_actuators = []
-        for act_id in range(self.model.nu):
-            joint_id = int(self.model.actuator_trnid[act_id][0])
-            joint_name = self.model.joint(joint_id).name
-            if joint_name in self._arm_joint_names:
-                arm_actuators.append(act_id)
-            else:
-                non_arm_actuators.append(act_id)
-        return arm_actuators, non_arm_actuators
+    #def _split_actuators(self):
+        #arm_actuators = []
+        #non_arm_actuators = []
+        #for act_id in range(self.model.nu):
+            #joint_id = int(self.model.actuator_trnid[act_id][0])
+            #joint_name = self.model.joint(joint_id).name
+            #if joint_name in self._arm_joint_names:
+                #arm_actuators.append(act_id)
+            #else:
+                #non_arm_actuators.append(act_id)
+        #return arm_actuators, non_arm_actuators
 
-    def _arm_joint_targets(self):
-        qpos_adrs = []
-        ranges = []
-        for act_id in self._arm_actuators:
-            joint_id = int(self.model.actuator_trnid[act_id][0])
-            qpos_adr = int(self.model.jnt_qposadr[joint_id])
-            jrange = self.model.jnt_range[joint_id]
-            qpos_adrs.append(qpos_adr)
-            ranges.append((float(jrange[0]), float(jrange[1])))
-        return qpos_adrs, ranges
+    #def _arm_joint_targets(self):
+        #qpos_adrs = []
+        #ranges = []
+        #for act_id in self._arm_actuators:
+            #joint_id = int(self.model.actuator_trnid[act_id][0])
+            #qpos_adr = int(self.model.jnt_qposadr[joint_id])
+            #jrange = self.model.jnt_range[joint_id]
+            #qpos_adrs.append(qpos_adr)
+            #ranges.append((float(jrange[0]), float(jrange[1])))
+        #return qpos_adrs, ranges
 
     def _has_free_root(self) -> bool:
         return self.model.njnt > 0 and self.model.jnt_type[0] == mujoco.mjtJoint.mjJNT_FREE
@@ -288,30 +288,18 @@ class AINexReachEnv(gym.Env):
         self.data.qvel[qpos_adr:qpos_adr + 6] = 0.0
 
     def _apply_action(self, action: np.ndarray):
-        # Smooth actions for steadier arm motion
-        smoothed = self.smooth_alpha * self._prev_action + (1.0 - self.smooth_alpha) * action
-        self._prev_action = smoothed
+        # Smooth actions for steadier arm motion:
+        low, high = self.model.actuator_ctrlrange.T
 
-        ctrl = self.data.ctrl
-        ctrl[:] = 0.0
+        action = np.clip(action, -1.0, 1.0)
 
-        for idx, act_id in enumerate(self._arm_actuators):
-            qpos_adr = self._arm_qpos_adr[idx]
-            min_q, max_q = self._arm_ranges[idx]
-            span = max_q - min_q
-            if span <= 0.0:
-                target = self._home_qpos[qpos_adr]
-            else:
-                target = self._home_qpos[qpos_adr] + smoothed[idx] * 0.5 * span
-                target = float(np.clip(target, min_q, max_q))
-            ctrl[act_id] = target
+        # scale [-1,1] → actuator ctrlrange
+        ctrl = low + 0.5 * (action + 1.0) * (high - low)
 
-        # Hold non-arm joints at home positions to keep legs still
-        if self._home_qpos is not None:
-            for act_id in self._non_arm_actuators:
-                joint_id = int(self.model.actuator_trnid[act_id][0])
-                qpos_adr = int(self.model.jnt_qposadr[joint_id])
-                ctrl[act_id] = self._home_qpos[qpos_adr]
+        self.data.ctrl[:] = ctrl
+
+        self._prev_action = action.copy()
+
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -321,11 +309,41 @@ class AINexReachEnv(gym.Env):
         if not self._apply_keyframe("squat_start"):
             self.data.qpos[:] = 0.0
             self.data.qvel[:] = 0.0
+            
+            # simple stable standing pose
+            self.data.qpos[2] = 0.6
+
+            def set_joint(name, value):
+                jid = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, name)
+                adr = self.model.jnt_qposadr[jid]
+                self.data.qpos[adr] = value
+
+                # arms
+                set_joint("r_sho_pitch", -0.6)
+                set_joint("l_sho_pitch", -0.6)
+
+                set_joint("r_sho_roll", 0.15)
+                set_joint("l_sho_roll", -0.15)
+
+                set_joint("r_el_pitch", 0.9)
+                set_joint("l_el_pitch", 0.9)
+
+                # legs (slightly bent for stability)
+                set_joint("r_hip_pitch", -0.3)
+                set_joint("l_hip_pitch", -0.3)
+
+                set_joint("r_knee", 0.6)
+                set_joint("l_knee", 0.6)
+
+                set_joint("r_ank_pitch", -0.3)
+                set_joint("l_ank_pitch", -0.3)
+
         self._set_root_pose(height=0.6)
         self._snap_feet_to_ground(penetration=0.01)
 
         self._home_qpos = self.data.qpos.copy()
         self._reset_ball()
+
         mujoco.mj_forward(self.model, self.data)
 
         return self._get_obs(), {}

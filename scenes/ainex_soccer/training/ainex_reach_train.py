@@ -46,7 +46,7 @@ class EpisodeCSVCallback(BaseCallback):
 def main():
     parser = argparse.ArgumentParser(description="Train PPO for AINex reach task.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-    parser.add_argument("--timesteps", type=int, default=3_000_000, help="Training timesteps.")
+    parser.add_argument("--timesteps", type=int, default=1_500_000, help="Training timesteps.")
     parser.add_argument("--num-envs", type=int, default=max(1, os.cpu_count()), help="Parallel envs.")
     args = parser.parse_args()
 
