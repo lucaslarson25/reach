@@ -7,6 +7,20 @@ It combines **MuJoCo physics simulation**, **PPO reinforcement learning**, and *
 
 The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 / CUDA)** with a unified configuration layer driven by a YAML file.
 
+### Table of contents
+
+- [Quick start: Arm reach](#quick-start-arm-reach-setup--train--run)
+- [Arm Reach Training](#arm-reach-training-primary-workflow) — supported arms, train/run commands, config, policy paths
+- [Adding a new arm (full guide)](#adding-a-new-arm-full-guide) — upload, template, registry, overrides
+- [Adding a new leg (biped)](#adding-a-new-leg-biped)
+- [YAML Configuration](#yaml-configuration)
+- [AINex Humanoid](#ainex-humanoid-reach--stand)
+- [Other Scenes](#other-scenes)
+- [Training on NAU Monsoon HPC](#training-on-nau-monsoon-hpc)
+- [System design and limitations](#system-design-and-limitations)
+- [macOS / Windows / Linux](#macos-m-series-instructions)
+- [Troubleshooting](#troubleshooting)
+
 ---
 
 ## Team Members
@@ -138,7 +152,7 @@ The viewer opens with the arm reaching for a ball. Close the viewer window to ex
 
 ---
 
-**Other arms:** Use the same syntax with any supported `arm_id`: `train z1`, `run aloha`, etc. To **add your own arm** (custom MJCF), see [Upload another arm](#upload-another-arm) and the full pipeline in [documentation/adding_new_arm.md](documentation/adding_new_arm.md). For a minimal copy-paste cheat sheet, see [QUICKSTART_ARMS.md](QUICKSTART_ARMS.md).
+**Other arms:** Use the same syntax with any supported `arm_id`: `train z1`, `run aloha`, etc. To **add your own arm** (custom MJCF), see [Upload another arm](#upload-another-arm) and the [Adding a new arm (full guide)](#adding-a-new-arm-full-guide) below.
 
 ---
 
@@ -158,6 +172,8 @@ This repo includes MuJoCo assets and action groups from the AINex Soccer project
 pip install mujoco numpy
 mjpython scripts/view_ainex_stable.py
 ```
+
+View model (no physics): `mjpython scripts/view_ainex_stable.py`. Replay action groups: `mjpython scripts/replay_actiongroup.py` (default CSV) or `mjpython scripts/replay_actiongroup.py assets/action_groups/csv/wave.csv`; choreographed sequence: `mjpython tools/run_sequence.py`. AINex reach training and eval are under [AINex Humanoid](#ainex-humanoid-reach--stand).
 
 ---
 
@@ -242,7 +258,7 @@ reach/
 
 ## System Design and Limitations
 
-See `documentation/system_design.md` for architecture, assumptions, limitations, and sim-to-real risks.
+See [System design and limitations](#system-design-and-limitations) in this README for architecture, assumptions, limitations, and sim-to-real risks.
 
 ---
 
@@ -397,6 +413,8 @@ mjpython scripts/run.py --arm-id ur5e --model policies/ppo_arms_ur5e_mac_500k.zi
 python scripts/run.py --arm-id panda   # Windows/Linux
 ```
 
+**Observation and reward (arms):** Per arm: `qpos`, `qvel`, `ee_pos`, `ball_pos`, distance to ball, unit direction EE→ball, delta_distance. Reward: dense (closer = more), progress, orientation (EE toward ball), move-away penalty; success bonus within 5 cm. `ee_priority_scale: true` scales actions so joints near the end-effector have higher gain.
+
 ### Config (`config/arms.yaml`)
 
 - **scene.arm_id** – which arm (e.g. `panda`, `ur5e`, `z1`, `aloha`)
@@ -432,7 +450,138 @@ To add **your own** arm (or one from [MuJoCo Menagerie](https://mujoco.readthedo
 2. **Train** — From the project root: **`train <arm_id>`** or **`train <arm_id> 500000`** (optional steps). With scripts: `python scripts/train.py --arm-id <arm_id> [--steps 500000]`.
 3. **Run** — **`run <arm_id>`** or **`run <arm_id> 10000`** (optional max viewer steps). With scripts: `mjpython scripts/run.py --arm-id <arm_id>` (macOS) or `python scripts/run.py --arm-id <arm_id>` (Windows/Linux).
 
-**Optional:** Add an entry in **`scenes/arms/arm_registry.py`** to set EE site name, reach limits, or home keyframe. If the arm behaves poorly (erratic motion, folding), add a section for your `arm_id` in **`config/arm_overrides.yaml`** (e.g. `reach_max_cap`, `initial_pose`, `joint_limit_margin_penalty`). **Full pipeline with troubleshooting:** [documentation/adding_new_arm.md](documentation/adding_new_arm.md).
+**Optional:** Add an entry in **`scenes/arms/arm_registry.py`** to set EE site name, reach limits, or home keyframe. If the arm behaves poorly (erratic motion, folding), add a section for your `arm_id` in **`config/arm_overrides.yaml`**. Full pipeline, template, and troubleshooting are in the section below.
+
+---
+
+## Adding a new arm (full guide)
+
+Pipeline: **Upload → Train → Run**. No code changes required for most arms.
+
+| Step | What you do | Required? |
+|------|-------------|-----------|
+| 1. Upload | Put the arm MJCF in the right folder | Yes |
+| 2. Train | Run `train <arm_id> [steps]` | Yes |
+| 3. Run | Run `run <arm_id> [steps]` | Yes |
+| 4. Registry | Add an entry in `arm_registry.py` (EE site, reach, keyframe) | Only if auto-discovery isn’t enough |
+| 5. Overrides | Tweak `config/arm_overrides.yaml` if behavior is off | Only if needed |
+
+**What you provide vs what the system adds:** You provide one arm MJCF (and optional `assets/`) in `scenes/arms/models/arms/<arm_id>/`. The system adds the **floor** and **ball** automatically; you never create `floor.xml` or `ball.xml`.
+
+**Upload:** Main XML must be named `arm.xml`, `<arm_id>.xml`, or `scene.xml`. Include an **end-effector `<site>`** at the arm tip; the system looks for names like `eetip`, `hand`, `gripper`, `attachment`, `pin_site`, `tool0`, `ee`, `ee_site`, `end_effector`. **Actuators** and **joints** as usual.
+
+### Arm MJCF template (copy and fill out)
+
+Save as **`scenes/arms/models/arms/<arm_id>/<arm_id>.xml`** (or `arm.xml`). Replace every **PLACEHOLDER**; for more joints, duplicate the link/joint/actuator pattern.
+
+```xml
+<mujoco model="ARM_ID">
+  <compiler angle="degree" coordinate="local" />
+  <option timestep="0.01" gravity="0 0 -9.81"/>
+  <worldbody>
+    <body name="base" pos="BASE_X BASE_Y BASE_Z">
+      <geom type="cylinder" size="BASE_RADIUS BASE_HALFHEIGHT" rgba="0.4 0.4 0.4 1"/>
+      <body name="link1" pos="0 0 0">
+        <joint name="joint1" type="hinge" axis="AXIS_1_X AXIS_1_Y AXIS_1_Z" range="JOINT1_MIN JOINT1_MAX" damping="0.05"/>
+        <geom type="capsule" fromto="0 0 0 LINK1_X LINK1_Y LINK1_Z" size="LINK1_RADIUS" rgba="0.2 0.6 0.9 1"/>
+        <body name="link2" pos="LINK1_X LINK1_Y LINK1_Z">
+          <joint name="joint2" type="hinge" axis="AXIS_2_X AXIS_2_Y AXIS_2_Z" range="JOINT2_MIN JOINT2_MAX" damping="0.05"/>
+          <geom type="capsule" fromto="0 0 0 LINK2_X LINK2_Y LINK2_Z" size="LINK2_RADIUS" rgba="0.2 0.9 0.4 1"/>
+          <site name="EE_SITE_NAME" pos="LINK2_X LINK2_Y LINK2_Z" size="0.02" rgba="1 0 0 1"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <motor name="motor1" joint="joint1" ctrlrange="-1 1" gear="1"/>
+    <motor name="motor2" joint="joint2" ctrlrange="-1 1" gear="1"/>
+  </actuator>
+  <keyframe>
+    <key name="home" qpos="QPOS1 QPOS2" ctrl="0 0"/>
+  </keyframe>
+</mujoco>
+```
+
+| Placeholder | Replace with | Example |
+|-------------|--------------|---------|
+| **ARM_ID** | Your arm id (folder name). | `my_robot` |
+| **BASE_X BASE_Y BASE_Z** | Base position (m). | `0 0 0.02` |
+| **BASE_RADIUS BASE_HALFHEIGHT** | Base cylinder size. | `0.03 0.02` |
+| **AXIS_1_X AXIS_1_Y AXIS_1_Z** | Joint 1 axis (unit vector). | `0 0 1` |
+| **JOINT1_MIN JOINT1_MAX** | Joint 1 limits (degrees). | `-90 90` |
+| **LINK1_X LINK1_Y LINK1_Z** | Endpoint of link 1. | `0.2 0 0` |
+| **LINK1_RADIUS** | Capsule radius (m). | `0.02` |
+| **AXIS_2_X AXIS_2_Y AXIS_2_Z**, **JOINT2_***, **LINK2_*** | Same for joint/link 2. | e.g. `0 0 1`, `-90 90`, `0.2 0 0` |
+| **EE_SITE_NAME** | End-effector site name. | `ee_site` |
+| **QPOS1 QPOS2** | Home joint positions (degrees). | `0 0` |
+
+**More joints:** Add more `<body>`, `<joint>`, `<geom>`, one `<motor>` per joint, and extend `qpos`. **Meshes:** Use `<compiler meshdir="assets"/>` and put files in `scenes/arms/models/arms/<arm_id>/assets/`.
+
+### Optional: Registry entry
+
+In `scenes/arms/arm_registry.py`, add to **`ARM_REGISTRY`**:
+
+```python
+"my_robot": ArmConfig(
+    name="My Robot Arm",
+    arm_path="arms/my_robot/my_robot.xml",
+    ee_site_name="ee_site",
+    reach_min=0.15,
+    reach_max=0.85,
+    home_keyframe_name="home",
+),
+```
+
+### Optional: Per-arm overrides
+
+In **`config/arm_overrides.yaml`** add a section for your `arm_id`:
+
+```yaml
+my_robot:
+  reach_max_cap: 0.5
+  reach_min_mode: registry
+  initial_pose: random
+  joint_limit_margin_penalty: 0.02
+```
+
+| Problem | Override | Typical value |
+|--------|----------|----------------|
+| Erratic motion | `reach_max_cap` | `0.5` |
+| Bimanual too close | `initial_pose` | `random` |
+| Two arms, one ball | `ball_mode` | `per_arm` |
+| Arm folds / self-collision | `joint_limit_margin_penalty` | `0.015`–`0.03` |
+
+**Cheat sheet (new arm):** `train <arm_id> [steps]` then `run <arm_id> [steps]`. Optional: registry and/or overrides.
+
+---
+
+## Adding a new leg (biped)
+
+Train any biped to walk toward a ball. Uses a **GNN policy** that adapts to any morphology.
+
+**Quick start:** 1) Drop biped MJCF into `scenes/legs/models/bipeds/<leg_id>/`. 2) Train: `python scripts/train_legs.py --leg-id <leg_id> --steps 500000`. 3) Run: `mjpython scripts/run_legs.py --leg-id <leg_id>`.
+
+**Convention:** Prefer `<leg_id>.xml`; otherwise the first non-`_composed` XML in the folder is used.
+
+**Requirements:** **Floating base** (root body with `freejoint`); the composed scene adds the ball. Set **`torso_body_name`** in the registry (root/pelvis body).
+
+**Registry** (`scenes/legs/leg_registry.py`):
+
+```python
+"my_biped": LegConfig(
+    name="My Biped",
+    leg_path="bipeds/my_biped/robot.xml",
+    torso_body_name="pelvis",
+    home_keyframe_name="home",
+    ball_dist_min=1.0,
+    ball_dist_max=5.0,
+    ball_side_extent=2.0,
+),
+```
+
+**Overrides** (`config/leg_overrides.yaml`): `ball_dist_min`, `ball_dist_max`, `initial_pose`, `joint_limit_margin_penalty`, etc.
+
+**Training tips:** `frame_skip` (4–5), `action_scale` (0.5–0.8), `total_steps` (1M+ for legs). **Reference:** Agility Cassie is under `scenes/legs/models/bipeds/agility_cassie/`.
 
 ---
 
@@ -538,31 +687,68 @@ Legacy multi-arm reach env in `scenes/industrial_arm_reaching/`. Registry arms: 
 
 ## Training on NAU Monsoon HPC
 
-For long training (1M–5M+ steps), use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/). Jobs run in the background—you can exit the server. On success, policies are pushed to `origin monsoon`; pull locally to get them.
+For long training (1M–5M+ steps), use [NAU's Monsoon supercomputer](https://in.nau.edu/arc/overview/connecting-to-monsoon/). On success, policies are pushed to `origin monsoon`; pull locally to run them.
 
-### Arm reach (recommended)
+**Prerequisites:** NAU credentials, Monsoon account, GitHub SSH key or token for push.
 
-**No batch jobs** (no SLURM failure emails): run in background with `nohup`; on success, auto-pushes and emails you.
+### Connect
+
+- **SSH:** `ssh [YOUR_NAU_ID]@monsoon.hpc.nau.edu`
+- **OnDemand:** [ondemand.hpc.nau.edu](https://ondemand.hpc.nau.edu/) → Clusters → Monsoon Cluster Login-Shell
+
+### Setup (one-time)
+
+```bash
+cd /scratch/$USER   # or ~/scratch; use /scratch/$USER if needed
+git clone https://github.com/lucaslarson25/reach.git
+cd reach
+git checkout monsoon && git pull origin monsoon
+
+module load cuda
+module load mambaforge
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements-hpc.txt
+python -c "import mujoco; import torch; print('CUDA:', torch.cuda.is_available())"
+```
+
+### Submit training
+
+**Option A — background (no SLURM):** Run in background with `nohup`; on success, script pushes to `monsoon` and can email you.
 
 ```bash
 cd /scratch/$USER/reach
 git checkout monsoon && git pull origin monsoon
+# Edit cluster/run_arms_background.sh: ARM_ID, TIMESTEPS, EMAIL
 chmod +x cluster/run_arms_background.sh
 nohup ./cluster/run_arms_background.sh > logs/arms_train.log 2>&1 &
-# Edit the script to set ARM_ID, TIMESTEPS, EMAIL; or: ARM_ID=aloha TIMESTEPS=5000000 nohup ...
+tail -f logs/arms_train.log
 ```
 
-After training completes (you'll get an email if `mail` works): `git checkout monsoon && git pull` then `mjpython scripts/run.py --arm-id panda`.
+**Option B — batch job:** `ARM_ID=panda TIMESTEPS=5000000 sbatch cluster/train_arms_monsoon.sh`
 
-**Batch job option:** `sbatch cluster/train_arms_monsoon.sh`
+**Monitor:** `squeue -u $USER`; `tail -f logs/monsoon_arms_<JOBID>.out` (arm) or `logs/monsoon_<JOBID>.out` (AINex).
 
-### Full workflow
+### After training
 
-1. **Connect:** `ssh [NAU_ID]@monsoon.hpc.nau.edu` (or [OnDemand](https://ondemand.hpc.nau.edu/))
-2. **Setup:** See `documentation/monsoon_setup.md` (venv, modules, scratch path)
-3. **Submit:** `sbatch cluster/train_arms_monsoon.sh`
-4. **Monitor:** `squeue -u $USER` and `tail -f logs/monsoon_arms_<JOBID>.out`
-5. **Pull locally:** `git checkout monsoon && git pull` when job succeeds
+Script commits and pushes to `origin monsoon` on success. Locally:
+
+```bash
+git fetch origin && git checkout monsoon && git pull origin monsoon
+run panda   # or mjpython scripts/run.py --arm-id panda
+```
+
+### GPU and storage
+
+| GPU | Use | SBATCH |
+|-----|-----|--------|
+| A100 | Deep learning | `#SBATCH --gpus=a100:1` |
+| V100 | Alternative | `#SBATCH --gpus=v100:1` |
+
+**Storage:** Use `/scratch/$USER` (or `~/scratch`) for training; avoid large outputs in home.
+
+**Troubleshooting:** `~/scratch` not found → use `/scratch/$USER`. Push fails → check SSH key or HTTPS token. No email → use `tail -f logs/arms_train.log`. CUDA OOM → reduce batch size or request different GPU.
 
 ---
 
@@ -629,7 +815,7 @@ You can train the ball-reaching policy on **any arm** by adding it to the regist
 - **Quick add:** Place MJCF in `scenes/arms/models/arms/<arm_id>/` and run  
   `python scripts/train.py --arm-id <arm_id>`
 - **If problems occur:** Edit `config/arm_overrides.yaml` for that arm (tighter ball band, random init, joint-limit penalty).
-- **Full guide:** [documentation/adding_new_arm.md](documentation/adding_new_arm.md)
+- **Full guide:** See [Adding a new arm (full guide)](#adding-a-new-arm-full-guide) in this README.
 
 ### Legs (Biped Locomotion)
 
@@ -639,9 +825,19 @@ Train bipeds to walk toward a ball. Uses Agility Cassie from [MuJoCo Menagerie](
 - **Run:** `mjpython scripts/run_legs.py --leg-id agility_cassie`
 - **Add leg:** Place MJCF in `scenes/legs/models/bipeds/<leg_id>/` and register in `leg_registry.py`
 - **Overrides:** `config/leg_overrides.yaml` for per-leg ball placement and penalties
-- **Guide:** [documentation/adding_new_leg.md](documentation/adding_new_leg.md)
+- **Full guide:** See [Adding a new leg (biped)](#adding-a-new-leg-biped) in this README.
 
 **Note:** There is no reference walking gait or motion capture; the policy learns from scratch. **Where rewards go for walking:** (1) move toward ball (forward/distance), (2) stay upright and at target height, (3) stay near the “home” standing pose so it doesn’t retract a leg, (4) avoid lateral slide and torso tilt, (5) encourage quick foot return—bonus when a foot lands (`reward_landing_scale`), penalty for each step a foot is in the air (`penalty_air_time`). Tune these in `config/legs.yaml` if the robot retracts a leg or slides.
+
+---
+
+## System design and limitations
+
+- **Architecture:** MuJoCo 3.x (physics/rendering), Stable-Baselines3 (PPO), Gymnasium envs. YAML selects env, model XML, policy path. Policies trained/evaluated from repo root so relative paths resolve; macOS uses `mjpython` for viewer.
+- **Assumptions:** Robot XML is self-contained and valid; action space drives MuJoCo actuators directly.
+- **Limitations:** Contact realism (foot/ground, arm/table) is approximate; actuator model is simplified; domain gap vs real (friction, compliance, appearance); evaluation is task-level, not disturbance robustness; no sensor noise/delay by default.
+- **Sim-to-real risks:** Joint limits, damping, torque limits can mismatch; friction and contact differ; policies may overfit to deterministic sim.
+- **Toward deployment:** Add sensor noise, actuator latency, friction randomization; calibrate with real measurements; add safety limits on velocities/accelerations; validate on simple real tasks; log real rollouts to refine models.
 
 ---
 
