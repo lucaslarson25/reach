@@ -313,31 +313,6 @@ class AINexReachEnv(gym.Env):
             # simple stable standing pose
             self.data.qpos[2] = 0.6
 
-            def set_joint(name, value):
-                jid = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, name)
-                adr = self.model.jnt_qposadr[jid]
-                self.data.qpos[adr] = value
-
-                # arms
-                set_joint("r_sho_pitch", -0.6)
-                set_joint("l_sho_pitch", -0.6)
-
-                set_joint("r_sho_roll", 0.15)
-                set_joint("l_sho_roll", -0.15)
-
-                set_joint("r_el_pitch", 0.9)
-                set_joint("l_el_pitch", 0.9)
-
-                # legs (slightly bent for stability)
-                set_joint("r_hip_pitch", -0.3)
-                set_joint("l_hip_pitch", -0.3)
-
-                set_joint("r_knee", 0.6)
-                set_joint("l_knee", 0.6)
-
-                set_joint("r_ank_pitch", -0.3)
-                set_joint("l_ank_pitch", -0.3)
-
         self._set_root_pose(height=0.6)
         self._snap_feet_to_ground(penetration=0.01)
 
@@ -359,6 +334,19 @@ class AINexReachEnv(gym.Env):
 
         action_delta = float(np.linalg.norm(self._prev_action - action))
         reward = 1.5 * (1.0 / (1.0 + 10.0 * dist)) - 0.05 * action_delta
+
+        torso_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "torso")
+        R = self.data.xmat[torso_id].reshape(3,3)
+
+        # reward upright torso
+        reward += 0.3 * R[2,2]
+
+        # penalize torso leaning
+        reward -= 0.4 * (abs(R[0,2]) + abs(R[1,2]))
+
+        # penalize huge joint movements
+        reward -= 0.001 * np.sum(action**2)
+
 
         # Penalize robot-table/obstacle collisions so policy learns to maneuver around structures
         if self._table_geom_id >= 0 and self._ball_geom_id >= 0:
