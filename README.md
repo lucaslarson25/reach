@@ -56,6 +56,92 @@ The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 
 
 ---
 
+## Quick start: Arm reach (setup → train → run)
+
+Get a robotic arm training and running in the simulator in four steps.
+
+### 1. Clone and go to the project
+
+```bash
+git clone <your-repo-url>
+cd reach
+```
+
+### 2. Install (one time)
+
+**macOS / Linux** (or run `./scripts/setup_arms.sh` from the repo root to do this automatically):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .    # installs the  train  and  run  commands (recommended)
+```
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+pip install -e .    # installs  train  and  run  commands
+```
+
+If you skip `pip install -e .`, you can still use the script form for everything: `python scripts/train.py --arm-id <arm_id>` and `mjpython scripts/run.py --arm-id <arm_id>` (macOS) or `python scripts/run.py --arm-id <arm_id>` (Windows/Linux). The rest of this section assumes you have the `train` and `run` commands installed.
+
+### 3. Train (default: Panda arm, ~4–5 min)
+
+From the **project root** with your venv activated:
+
+```bash
+train panda              # train Panda arm, 300k steps (default)
+train ur5e               # train UR5e, 300k steps
+train ur5e 500000        # train UR5e for 500k steps (optional second argument)
+```
+
+- **First argument:** `arm_id` — which arm to train (e.g. `panda`, `ur5e`, `z1`, `arm_2link`, `aloha`). See the [supported arms table](#supported-arms) below.
+- **Second argument (optional):** total training steps. If omitted, the default is 300 000 (from `config/arms.yaml`).
+
+Training saves a policy to `policies/ppo_arms_<arm_id>_mac_<k>k.zip` (e.g. `policies/ppo_arms_panda_mac_300k.zip` or `ppo_arms_ur5e_mac_500k.zip` if you used 500k steps).
+
+**Using the script instead of `train`:**
+
+```bash
+python scripts/train.py --arm-id panda
+python scripts/train.py --arm-id ur5e --steps 500000
+```
+
+### 4. Run the simulation
+
+With a trained policy, open the MuJoCo viewer and run the policy:
+
+```bash
+run panda                # run Panda (loads default policy for 300k steps)
+run ur5e                 # run UR5e
+run ur5e 10000           # run UR5e, limit to 10 000 steps in the viewer (optional second argument)
+```
+
+- **First argument:** `arm_id` — must match the arm you trained (and the policy file name).
+- **Second argument (optional):** maximum simulation steps in the viewer. If omitted, the default is 5000 (from config). The simulation resets when an episode ends; this cap is the total step count before the process exits.
+
+**Platform behavior:** On **macOS**, the `run` command automatically uses **mjpython** so the MuJoCo passive viewer works with Metal. On **Windows and Linux**, it uses your current **python** (from the venv). No need to type `mjpython` yourself.
+
+**Using the script instead of `run`:**
+
+```bash
+mjpython scripts/run.py --arm-id panda        # macOS
+python scripts/run.py --arm-id panda          # Windows/Linux
+python scripts/run.py --arm-id ur5e --steps 10000
+```
+
+The viewer opens with the arm reaching for a ball. Close the viewer window to exit.
+
+---
+
+**Other arms:** Use the same syntax with any supported `arm_id`: `train z1`, `run aloha`, etc. To **add your own arm** (custom MJCF), see [Upload another arm](#upload-another-arm) and the full pipeline in [documentation/adding_new_arm.md](documentation/adding_new_arm.md). For a minimal copy-paste cheat sheet, see [QUICKSTART_ARMS.md](QUICKSTART_ARMS.md).
+
+---
+
 ## AINex Soccer Assets (from [ainex_soccer](https://github.com/tjdavis51/ainex_soccer))
 
 This repo includes MuJoCo assets and action groups from the AINex Soccer project:
@@ -189,7 +275,10 @@ python -m venv .venv
 
 ```bash
 pip install -r requirements.txt
+pip install -e .    # installs  train  and  run  commands for arm reach (recommended)
 ```
+
+If you use `pip install -e .`, you can then use **`train <arm_id> [steps]`** and **`run <arm_id> [steps]`** from the project root (see [Quick start: Arm reach](#quick-start-arm-reach-setup--train--run) and [Train and run commands](#train-and-run-commands-recommended)).
 
 ### 4. Verify installation
 
@@ -213,12 +302,12 @@ The **arm reach** scene trains robotic arms to reach a ball. You upload only the
 
 ### How It Works
 
-- **YAML-driven:** `config/arms.yaml` defines which arm, ball mode, train/run settings.
+- **YAML-driven:** `config/arms.yaml` defines default arm, ball mode, train/run settings.
 - **Auto-discovery:** Arms from [MuJoCo Menagerie](https://mujoco.readthedocs.io/en/stable/models.html) are auto-detected; EE sites and reach are inferred from MJCF.
-- **CLI overrides:** No YAML edits needed—use `--arm-id`, `--steps`, etc. to tweak for any arm.
-- **Single workflow:** Same commands for all arms (panda, ur5e, aloha, etc.).
+- **Simple CLI:** After `pip install -e .`, you use **`train <arm_id> [steps]`** and **`run <arm_id> [steps]`** for all arms—no YAML edits required.
+- **Single workflow:** Same two commands for every arm (panda, ur5e, aloha, etc.).
 
-### Supported Arms
+### Supported arms {#supported-arms}
 
 | arm_id     | Model                    |
 |------------|---------------------------|
@@ -236,30 +325,76 @@ The **arm reach** scene trains robotic arms to reach a ball. You upload only the
 | aloha      | ALOHA 2 (dual arm)        |
 | unitree_z1, z1 | Unitree Z1            |
 
-### Train and Run
+### Train and run commands (recommended)
 
-From project root:
+If you ran **`pip install -e .`** in the project root (see [Quick start](#quick-start-arm-reach-setup--train--run)), two commands are installed: **`train`** and **`run`**. Use them from the project root with your venv activated.
 
-```bash
-# Train (default: panda, 300k steps)
-python scripts/train.py
+**Train:**
 
-# Run in viewer (default: panda). macOS: use mjpython for MuJoCo passive viewer
-mjpython scripts/run.py
+```text
+train <arm_id> [steps]
 ```
 
-### CLI Overrides
+- **`arm_id`** — Which arm to train (e.g. `panda`, `ur5e`, `z1`, `aloha`). Required.
+- **`steps`** — Total PPO timesteps. Optional; default is 300 000 from `config/arms.yaml`.
+
+Examples:
 
 ```bash
-# Train different arm / steps / ball mode
-python scripts/train.py --arm-id aloha
+train panda           # Panda, 300k steps
+train ur5e 500000     # UR5e, 500k steps
+train aloha           # ALOHA (dual arm), 300k steps
+```
+
+**Run (viewer):**
+
+```text
+run <arm_id> [steps]
+```
+
+- **`arm_id`** — Which arm (and thus which policy file) to load. Must match the arm you trained.
+- **`steps`** — Maximum simulation steps in the viewer before exit. Optional; default is 5000.
+
+Examples:
+
+```bash
+run panda             # Run Panda policy (default 5k steps in viewer)
+run ur5e 10000        # Run UR5e, cap at 10k steps
+run aloha             # Run ALOHA policy
+```
+
+**Policy file matching:** The run command looks for a policy at `policies/ppo_arms_<arm_id>_mac_<k>k.zip`, where `k` is the training step count in thousands (from config or from the `steps` you used when training). For example, `train ur5e 500000` produces `ppo_arms_ur5e_mac_500k.zip`; `run ur5e` then loads it if the config default is 300k, so for a 500k-trained policy either set `train.total_steps: 500000` in `config/arms.yaml` for that arm or use the script form with `--model policies/ppo_arms_ur5e_mac_500k.zip` (see below).
+
+**macOS:** The `run` command automatically invokes **mjpython** so the MuJoCo passive viewer works. On Windows/Linux it uses **python** from your venv.
+
+**Help:** Run **`train --help`** or **`run --help`** to see all options (including flags that are only available when using the script form).
+
+**Command reference:**
+
+| Command | Meaning |
+|--------|--------|
+| `train <arm_id>` | Train that arm with default steps (300k). |
+| `train <arm_id> <steps>` | Train that arm for that many steps. |
+| `run <arm_id>` | Run that arm’s policy in the viewer (default 5k steps). |
+| `run <arm_id> <steps>` | Run that arm’s policy, cap viewer at that many steps. |
+
+Always run from the **project root** with your **venv activated**.
+
+### Script form (without `train` / `run` commands)
+
+If you did not run `pip install -e .`, or you need extra flags (e.g. `--per-arm-policies`, `--model`), use the scripts directly from the project root:
+
+```bash
+# Train
+python scripts/train.py --arm-id panda
 python scripts/train.py --arm-id ur5e --steps 500000
 python scripts/train.py --arm-id aloha --per-arm-policies
 
-# Run different arm / policy / steps
-mjpython scripts/run.py --arm-id aloha
+# Run (macOS: mjpython for viewer; Windows/Linux: python)
+mjpython scripts/run.py --arm-id panda
+mjpython scripts/run.py --arm-id ur5e --steps 10000
 mjpython scripts/run.py --arm-id ur5e --model policies/ppo_arms_ur5e_mac_500k.zip
-mjpython scripts/run.py --arm-id aloha --per-arm-policies
+python scripts/run.py --arm-id panda   # Windows/Linux
 ```
 
 ### Config (`config/arms.yaml`)
@@ -277,9 +412,11 @@ mjpython scripts/run.py --arm-id aloha --per-arm-policies
 
 Env vars **ARM_ID**, **TOTAL_STEPS**, **MODEL_PATH**, **USE_MPS** override YAML. CLI flags take precedence.
 
-### Policy Paths
+### Policy paths
 
-Policies are saved to `policies/ppo_arms_<arm_id>_mac_<k>k.zip` (e.g. `policies/ppo_arms_aloha_mac_300k.zip`). The run script derives the path from `--arm-id` and config; use `--model` to override.
+Policies are saved under the `policies/` directory with the naming pattern **`ppo_arms_<arm_id>_mac_<k>k.zip`**, where `<k>` is the training step count in thousands (e.g. 300k → `300k`, 500k → `500k`). Examples: `ppo_arms_panda_mac_300k.zip`, `ppo_arms_ur5e_mac_500k.zip`.
+
+When you use **`run <arm_id>`**, the run command infers the policy path from `arm_id` and the default step count in `config/arms.yaml` (`train.total_steps`). If you trained with a non-default step count (e.g. `train ur5e 500000`), either set `train.total_steps: 500000` in the config so `run ur5e` finds the 500k policy, or use the script form and pass the file explicitly: **`python scripts/run.py --arm-id ur5e --model policies/ppo_arms_ur5e_mac_500k.zip`** (or `mjpython` on macOS).
 
 ### Eval (metrics only)
 
@@ -287,13 +424,15 @@ Policies are saved to `policies/ppo_arms_<arm_id>_mac_<k>k.zip` (e.g. `policies/
 python -m scenes.arms.training.eval_model --model policies/ppo_arms_panda_mac_300k.zip --arm-id panda
 ```
 
-### Adding Another Arm
+### Upload another arm
 
-1. Copy the arm from Menagerie into `scenes/arms/models/arms/<arm_id>/`.
-2. Name the main XML `arm.xml`, `<arm_id>.xml`, or `scene.xml`.
-3. Use `--arm-id <arm_id>` and train/run. EE sites and reach are inferred from MJCF.
+To add **your own** arm (or one from [MuJoCo Menagerie](https://mujoco.readthedocs.io/en/stable/models.html)):
 
-For manual override, add an entry in `scenes/arms/arm_registry.py`. See `scenes/arms/README.md` for details.
+1. **Upload** — Put the arm MJCF in **`scenes/arms/models/arms/<arm_id>/`**. Name the main file **`arm.xml`**, **`<arm_id>.xml`**, or **`scene.xml`**. Include an end-effector **`<site>`** at the arm tip (e.g. named `eetip`, `hand`, `tool0`, or `attachment_site`).
+2. **Train** — From the project root: **`train <arm_id>`** or **`train <arm_id> 500000`** (optional steps). With scripts: `python scripts/train.py --arm-id <arm_id> [--steps 500000]`.
+3. **Run** — **`run <arm_id>`** or **`run <arm_id> 10000`** (optional max viewer steps). With scripts: `mjpython scripts/run.py --arm-id <arm_id>` (macOS) or `python scripts/run.py --arm-id <arm_id>` (Windows/Linux).
+
+**Optional:** Add an entry in **`scenes/arms/arm_registry.py`** to set EE site name, reach limits, or home keyframe. If the arm behaves poorly (erratic motion, folding), add a section for your `arm_id` in **`config/arm_overrides.yaml`** (e.g. `reach_max_cap`, `initial_pose`, `joint_limit_margin_penalty`). **Full pipeline with troubleshooting:** [documentation/adding_new_arm.md](documentation/adding_new_arm.md).
 
 ---
 
@@ -491,6 +630,18 @@ You can train the ball-reaching policy on **any arm** by adding it to the regist
   `python scripts/train.py --arm-id <arm_id>`
 - **If problems occur:** Edit `config/arm_overrides.yaml` for that arm (tighter ball band, random init, joint-limit penalty).
 - **Full guide:** [documentation/adding_new_arm.md](documentation/adding_new_arm.md)
+
+### Legs (Biped Locomotion)
+
+Train bipeds to walk toward a ball. Uses Agility Cassie from [MuJoCo Menagerie](https://mujoco.readthedocs.io/en/stable/models.html).
+
+- **Train:** `python scripts/train_legs.py --leg-id agility_cassie --steps 500000`
+- **Run:** `mjpython scripts/run_legs.py --leg-id agility_cassie`
+- **Add leg:** Place MJCF in `scenes/legs/models/bipeds/<leg_id>/` and register in `leg_registry.py`
+- **Overrides:** `config/leg_overrides.yaml` for per-leg ball placement and penalties
+- **Guide:** [documentation/adding_new_leg.md](documentation/adding_new_leg.md)
+
+**Note:** There is no reference walking gait or motion capture; the policy learns from scratch. **Where rewards go for walking:** (1) move toward ball (forward/distance), (2) stay upright and at target height, (3) stay near the “home” standing pose so it doesn’t retract a leg, (4) avoid lateral slide and torso tilt, (5) encourage quick foot return—bonus when a foot lands (`reward_landing_scale`), penalty for each step a foot is in the air (`penalty_air_time`). Tune these in `config/legs.yaml` if the robot retracts a leg or slides.
 
 ---
 

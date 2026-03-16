@@ -5,6 +5,9 @@ Run trained arm policy with MuJoCo viewer. YAML-driven.
 Usage (from project root):
   mjpython -m scenes.arms.training.run_simulation --config config/arms.yaml
   mjpython -m scenes.arms.training.run_simulation --config config/arms.yaml --arm-id ur5e
+
+Note: Policy files are pickled with the current environment (e.g. NumPy). Use the same
+NumPy major version for training and running (see requirements.txt).
 """
 import os
 import sys
@@ -63,16 +66,41 @@ def main():
         env_kw["reach_max"] = train["reach_max_cap"]
     if train.get("reach_min_mode"):
         env_kw["reach_min_mode"] = train["reach_min_mode"]
+    if train.get("reach_min_fraction") is not None:
+        env_kw["reach_min_fraction"] = train["reach_min_fraction"]
+    if train.get("reach_min_floor") is not None:
+        env_kw["reach_min_floor"] = train["reach_min_floor"]
     env = ArmReachEnv(**env_kw)
 
+    # Resolve and validate policy path(s)
+    if args.model is not None:
+        load_path = args.model if os.path.isabs(args.model) else os.path.join(_REPO_ROOT, args.model)
+    else:
+        load_path = policy_paths[0] if isinstance(policy_paths, list) else policy_paths
+    if not os.path.isfile(load_path):
+        print("ERROR: Policy file not found:", load_path)
+        print("Train first: python scripts/train.py --arm-id", arm_id)
+        return
+    def _load_model(path):
+        try:
+            return PPO.load(path)
+        except ModuleNotFoundError as e:
+            if "numpy._core" in str(e) or "numpy.core" in str(e):
+                print("ERROR: Policy was saved with a different NumPy version. Use the same NumPy major version for train and run.")
+                print("  Current: pip show numpy. Fix: pip install 'numpy>=2.0,<3' (or match the env that trained the policy).")
+            raise
+
     if per_arm_policies and n_arms > 1 and isinstance(policy_paths, list):
-        models = [PPO.load(p) for p in policy_paths]
+        to_load = [p for p in policy_paths if os.path.isfile(p)]
+        if len(to_load) != n_arms:
+            print("ERROR: Expected", n_arms, "policy files (per_arm_policies). Found:", to_load)
+            return
+        models = [_load_model(p) for p in to_load]
         act_groups = info.get("actuator_groups") or [list(range(env.model.nu))]
         if len(act_groups) != n_arms:
             act_groups = [list(range(env.model.nu))]
     else:
-        model_path = policy_paths[0] if isinstance(policy_paths, list) else policy_paths
-        models = [PPO.load(model_path)]
+        models = [_load_model(load_path)]
         act_groups = [list(range(env.model.nu))]
 
     # Ensure policy obs shape matches env

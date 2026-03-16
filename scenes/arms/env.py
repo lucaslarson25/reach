@@ -154,6 +154,7 @@ class ArmReachEnv(gym.Env):
         self._reach_max = _reach_max
 
         self._home_keyframe_name = (cfg.home_keyframe_name if cfg else "home") or "home"
+        self._reset_keyframe = self._initial_keyframe or self._home_keyframe_name
         self._has_home_key = False
         self._has_reset_key = False
         for i in range(self.model.nkey):
@@ -196,7 +197,6 @@ class ArmReachEnv(gym.Env):
                     adr = int(self.model.jnt_qposadr[j])
                     lo, hi = float(self.model.jnt_range[j, 0]), float(self.model.jnt_range[j, 1])
                     self._joint_limit_list.append((adr, lo, hi))
-        self._reset_keyframe = self._initial_keyframe or self._home_keyframe_name
 
         self.disable_logging = disable_logging
         if not disable_logging:

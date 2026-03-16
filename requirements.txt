@@ -1,7 +1,8 @@
 # to install run command: pip install -r requirements.txt
 
 # ---- Core RL + Sim ----
-numpy==1.26.4
+# Use same NumPy major version for training and running (policy pickles are version-sensitive).
+numpy>=2.0,<3
 gymnasium>=0.29,<1.0
 stable-baselines3==2.3.2
 mujoco==3.2.0
