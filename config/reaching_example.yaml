@@ -1,93 +1,19 @@
-# ============================================================================
-# Example Configuration for Reaching Task
-# ============================================================================
-# This is an example configuration specifically tuned for the reaching task.
-# Copy and modify this for your own experiments.
-#
-# Usage:
-#   python scripts/train.py --config config/reaching_example.yaml
-# ============================================================================
-
-# Experiment Settings
 experiment:
-  name: "reaching_ppo_v1"
-  seed: 42
-  log_dir: "logs/reaching/"
-  checkpoint_dir: "models/reaching/"
+  name: "z1_reach_ppo_v1"
+  log_dir: "logs/reach/"
+  checkpoint_dir: "policies/reach/"
 
-# Environment Settings
 environment:
-  name: "ReachingTask"
-  model_path: "src/simulation/models/arm_v1.xml"
-  
-  task:
-    max_episode_steps: 500        # Reaching should be quick
-    success_threshold: 0.03       # 3cm tolerance
-    workspace_bounds:
-      x_min: -0.4
-      x_max: 0.4
-      y_min: -0.4
-      y_max: 0.4
-      z_min: 0.6
-      z_max: 1.2
-  
-  reward:
-    distance_weight: 1.0
-    smoothness_weight: 0.05       # Encourage smooth motion
-    energy_weight: 0.005          # Penalize high torques
-    success_bonus: 5.0            # Bonus for reaching target
+  model_path: "models/z1scene.xml"
+  success_threshold: 0.04
+  max_episode_steps: 1200
 
-# Agent Settings (PPO tuned for reaching)
 agent:
-  algorithm: "PPO"
-  
   ppo:
-    learning_rate: 0.0003
-    n_steps: 2048
-    batch_size: 64
-    n_epochs: 10
-    gamma: 0.99
-    gae_lambda: 0.95
-    clip_range: 0.2
-    ent_coef: 0.01                # Small entropy for exploration
-    vf_coef: 0.5
-    max_grad_norm: 0.5
-  
-  policy:
-    type: "MLP"
-    hidden_sizes: [256, 256]
-    activation: "relu"
+    ent_coef: 0.01
 
-# Training Settings
 training:
-  total_timesteps: 500000         # 500K steps should be enough for reaching
+  total_timesteps: 500000
+  n_envs: 8
   eval_freq: 10000
-  n_eval_episodes: 20
   checkpoint_freq: 25000
-  log_freq: 1000
-  n_envs: 8                       # 8 parallel environments
-  record_video: true
-  video_freq: 50000
-
-# Vision (disabled for reaching)
-vision:
-  enabled: false
-
-# Logging
-logging:
-  tensorboard: true
-  wandb: false
-  log_level: "INFO"
-
-# Evaluation
-evaluation:
-  deterministic: true
-  render: false
-  save_trajectories: true
-
-# Hardware
-hardware:
-  device: "auto"
-  gpu_id: 0
-  n_cpu_threads: 8
-

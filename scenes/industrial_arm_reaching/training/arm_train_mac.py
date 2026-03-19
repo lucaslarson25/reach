@@ -54,32 +54,33 @@ class TerminationRatioCallback(BaseCallback):
 
 
 # ---------- Env factory ----------
-def make_env():
+def make_env(arm_id=None, model_path=None):
     def _init():
-        env = Z1ReachEnv()
+        env = Z1ReachEnv(arm_id=arm_id, model_path=model_path)
         return env
     return _init
 
 
 def main():
+    # Arm selection: ARM_ID env var (e.g. z1, arm_2link) or MODEL_PATH for custom scene XML
+    arm_id = os.getenv("ARM_ID", "").strip() or None
+    model_path = os.getenv("MODEL_PATH", "").strip() or None
+    if arm_id:
+        print(f"Using arm from registry: {arm_id}")
+    if model_path:
+        print(f"Using model path: {model_path}")
+
     # ---- Threads & device tuning for Apple Silicon ----
     cores = os.cpu_count() or 8
-    # Leave one core for the OS/UI
     th.set_num_threads(max(1, cores - 1))
-
-    # Default to CPU (often faster for small nets on M-series).
-    # Set USE_MPS=1 to try Apple GPU; requires float32 everywhere.
     use_mps = os.getenv("USE_MPS", "0") == "1"
     if use_mps and th.backends.mps.is_available():
         device = "mps"
     else:
         device = "cpu"
+    print(f"Detected cores: {cores}, device: {device}")
 
-    print(f"Detected cores: {cores}")
-    print(f"Using device: {device}")
-
-    # ---- Single-process env is usually fastest on macOS for lightweight models ----
-    env = DummyVecEnv([make_env()])  # 1 env, no IPC overhead
+    env = DummyVecEnv([make_env(arm_id=arm_id, model_path=model_path)])
 
     # ---- PPO config tuned for quick iterations on small workloads ----
     # Keep n_steps high (2048) for good on-policy batches even with 1 env.
@@ -110,9 +111,9 @@ def main():
 
     model.learn(total_timesteps=total_timesteps, callback=callbacks)
 
-    # ---- Save policy ----
     os.makedirs("policies", exist_ok=True)
-    save_tag = f"ppo_z1_mac_{total_timesteps//1000}k"
+    tag = arm_id or "custom"
+    save_tag = f"ppo_{tag}_mac_{total_timesteps//1000}k"
     save_path = f"policies/{save_tag}"
     model.save(save_path)
     print(f"Model saved as {save_path}.zip")

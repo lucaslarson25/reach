@@ -73,6 +73,7 @@ def _normalize_schema(raw: dict) -> dict:
     run.setdefault("episodes", 10)
     run.setdefault("max_seconds_per_ep", 30.0)
     run.setdefault("deterministic", True)
+    run.setdefault("disable_logging", False)
 
     # Resolve paths
     if "scene" in cfg and "model_xml" in cfg["scene"]:

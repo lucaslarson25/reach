@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reach-capstone"
+version = "0.1.0"
+description = "MuJoCo + PPO robotics simulation and rendering toolkit."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Proprietary" }
+authors = [
+  { name = "REACH Capstone Team" },
+]
+dependencies = [
+  "numpy==1.26.4",
+  "gymnasium>=0.29,<1.0",
+  "stable-baselines3==2.3.2",
+  "mujoco==3.2.0",
+  "torch>=2.3",
+  "tqdm==4.66.4",
+  "rich>=13.5.0",
+  "pandas==2.2.3",
+  "matplotlib==3.9.2",
+  "opencv-python==4.10.0.84",
+  "Pillow>=10.0.0",
+  "imageio>=2.34",
+  "imageio-ffmpeg>=0.5.0",
+  "mediapipe>=0.10.0",
+  "scikit-learn>=1.3.0",
+  "jupyterlab==4.2.5",
+  "moviepy==1.0.3",
+  "ffmpeg==1.4",
+]
+
+[project.scripts]
+reach-train = "scenes.industrial_arm_reaching.training.arm_train:main"
+reach-eval = "eval_model:main"
+reach-render-demo = "renders.render_demo:main"
+reach-render-model = "renders.render_model:main"
+reach-render-demo-mac = "renders.render_demo_mac:main"
+reach-render-model-mac = "renders.render_model_mac:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["config", "envs", "renders", "scenes", "scenes.*", "tests"]
+exclude = ["documentation*", "website*", "notebooks*", "demos*"]
+
+[tool.setuptools.package-data]
+scenes = ["**/*.xml", "**/*.zip", "**/*.stl", "**/*.STL", "**/*.yaml"]
