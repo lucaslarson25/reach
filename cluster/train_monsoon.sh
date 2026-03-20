@@ -19,7 +19,12 @@ SEED=42
 # Alternatives: ainex_walk_to_ball_train.py, ainex_reach_wholebody_train.py
 
 # --- Paths ---
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Slurm may execute this from a spool copy; prefer submit directory (see train_arms_monsoon.sh).
+if [ -n "${SLURM_SUBMIT_DIR:-}" ]; then
+  REPO_ROOT="$(cd "${SLURM_SUBMIT_DIR}" && pwd)"
+else
+  REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
 cd "$REPO_ROOT"
 mkdir -p logs
 

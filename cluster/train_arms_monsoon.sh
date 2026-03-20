@@ -22,7 +22,14 @@ TIMESTEPS="${TIMESTEPS:-1000000}"
 # Override: ARM_ID=aloha TIMESTEPS=5000000 sbatch cluster/train_arms_monsoon.sh
 
 # --- Paths ---
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Slurm often runs this script from a *spool copy* (not your repo). BASH_SOURCE then
+# resolves outside the project, so .venv / logs / policies are "missing". Use the
+# directory you ran sbatch from (always set in batch jobs).
+if [ -n "${SLURM_SUBMIT_DIR:-}" ]; then
+  REPO_ROOT="$(cd "${SLURM_SUBMIT_DIR}" && pwd)"
+else
+  REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
 cd "$REPO_ROOT"
 mkdir -p logs policies
 
