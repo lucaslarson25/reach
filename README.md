@@ -12,6 +12,7 @@ The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 
 - [Quick start: Arm reach](#quick-start-arm-reach-setup--train--run)
 - [Arm Reach Training](#arm-reach-training-primary-workflow) — supported arms, train/run commands, config, policy paths
 - [Adding a new arm (full guide)](#adding-a-new-arm-full-guide) — upload, template, registry, overrides
+- [Downloading an arm from GitHub](#downloading-an-arm-from-github) — clone/ZIP, copy subtree, train/run
 - [Adding a new leg (biped)](#adding-a-new-leg-biped)
 - [YAML Configuration](#yaml-configuration)
 - [AINex Humanoid](#ainex-humanoid-reach--stand)
@@ -450,6 +451,8 @@ To add **your own** arm (or one from [MuJoCo Menagerie](https://mujoco.readthedo
 2. **Train** — From the project root: **`train <arm_id>`** or **`train <arm_id> 500000`** (optional steps). With scripts: `python scripts/train.py --arm-id <arm_id> [--steps 500000]`.
 3. **Run** — **`run <arm_id>`** or **`run <arm_id> 10000`** (optional max viewer steps). With scripts: `mjpython scripts/run.py --arm-id <arm_id>` (macOS) or `python scripts/run.py --arm-id <arm_id>` (Windows/Linux).
 
+**From GitHub:** If the MJCF lives in another repository, follow [Downloading an arm from GitHub](#downloading-an-arm-from-github) below, then train/run as above.
+
 **Optional:** Add an entry in **`scenes/arms/arm_registry.py`** to set EE site name, reach limits, or home keyframe. If the arm behaves poorly (erratic motion, folding), add a section for your `arm_id` in **`config/arm_overrides.yaml`**. Full pipeline, template, and troubleshooting are in the section below.
 
 ---
@@ -468,7 +471,21 @@ Pipeline: **Upload → Train → Run**. No code changes required for most arms.
 
 **What you provide vs what the system adds:** You provide one arm MJCF (and optional `assets/`) in `scenes/arms/models/arms/<arm_id>/`. The system adds the **floor** and **ball** automatically; you never create `floor.xml` or `ball.xml`.
 
-**Upload:** Main XML must be named `arm.xml`, `<arm_id>.xml`, or `scene.xml`. Include an **end-effector `<site>`** at the arm tip; the system looks for names like `eetip`, `hand`, `gripper`, `attachment`, `pin_site`, `tool0`, `ee`, `ee_site`, `end_effector`. **Actuators** and **joints** as usual.
+### Downloading an arm from GitHub
+
+Use this when the model comes from an external repo (e.g. [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) or a lab fork).
+
+1. **Get the files** — Clone or download the repository so you have **everything** the MJCF references: the main `.xml` / `.mjcf`, all `<include>` targets, meshes (`.obj`, `.stl`, …), textures, etc. Missing assets will cause MuJoCo load errors.
+   - `git clone https://github.com/OWNER/REPO.git`
+   - `git clone --depth 1 https://github.com/OWNER/REPO.git` (shallow clone)
+   - Or **Code → Download ZIP** on GitHub and unzip.
+2. **Copy into REACH** — Create **`scenes/arms/models/arms/<arm_id>/`** (this folder name is your `--arm-id`). Copy the **entire** arm subtree from the upstream tree, preserving internal paths so `<include>` and `meshdir`/`assetdir` still resolve. Do not copy only the top-level XML unless it has no external assets.
+3. **Meet discovery rules** — That folder must contain **`arm.xml`**, **`<arm_id>.xml`**, or **`scene.xml`** (see `scenes/arms/arm_discovery.py`). The model needs an **end-effector `<site>`** at the tip; auto-discovery matches names like `eetip`, `hand`, `gripper`, `attachment_site`, `tool0`, `ee`, `ee_site`, `end_effector`.
+4. **Train and run** — From the repo root (venv active): **`train <arm_id>`** or **`train <arm_id> 1000000`**, then **`run <arm_id>`** (or **`run <arm_id> 10000`**). If your policy filename does not match `train.total_steps` in `config/arms.yaml`, pass the zip explicitly, e.g. **`mjpython scripts/run.py --arm-id <arm_id> --model policies/ppo_arms_<arm_id>_mac_1000k.zip`** (macOS).
+5. **Licensing** — Respect the upstream license if you commit third-party models in your fork.
+6. **If load or discovery fails** — Add or rename an EE `<site>` in the MJCF, add an entry in **`scenes/arms/arm_registry.py`**, or tune **`config/arm_overrides.yaml`** (see [Optional: Registry entry](#optional-registry-entry) and [Optional: Per-arm overrides](#optional-per-arm-overrides) below).
+
+**Upload (naming):** Main XML must be named `arm.xml`, `<arm_id>.xml`, or `scene.xml`. Include an **end-effector `<site>`** at the arm tip; the system looks for names like `eetip`, `hand`, `gripper`, `attachment`, `pin_site`, `tool0`, `ee`, `ee_site`, `end_effector`. **Actuators** and **joints** as usual.
 
 ### Arm MJCF template (copy and fill out)
 
