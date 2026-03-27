@@ -110,6 +110,13 @@ class AINexEnv(gym.Env):
         self.data.ctrl[:] = scaled_action
 
         mujoco.mj_step(self.model, self.data)
+
+        # --- PIN FEET / STOP DRIFT ---
+        self.data.qpos[0] = 0.0  # lock X
+        self.data.qpos[1] = 0.0  # lock Y
+        self.data.qvel[0] = 0.0  # kill X velocity
+        self.data.qvel[1] = 0.0  # kill Y velocity
+
         self.step_count += 1
 
         torso_pos = self.data.xpos[self._torso_id]
@@ -326,6 +333,13 @@ class AINexReachEnv(gym.Env):
     def step(self, action):
         self._apply_action(action)
         mujoco.mj_step(self.model, self.data)
+
+        # --- PIN FEET / STOP DRIFT ---
+        self.data.qpos[0] = 0.0  # lock X
+        self.data.qpos[1] = 0.0  # lock Y
+        self.data.qvel[0] = 0.0  # kill X velocity
+        self.data.qvel[1] = 0.0  # kill Y velocity
+
         self.step_count += 1
 
         grip_pos = self.data.site_xpos[self._gripper_site_id]
@@ -594,6 +608,13 @@ class AINexWalkToBallEnv(gym.Env):
     def step(self, action):
         self._apply_action(action)
         mujoco.mj_step(self.model, self.data)
+
+        # --- PIN FEET / STOP DRIFT ---
+        self.data.qpos[0] = 0.0  # lock X
+        self.data.qpos[1] = 0.0  # lock Y
+        self.data.qvel[0] = 0.0  # kill X velocity
+        self.data.qvel[1] = 0.0  # kill Y velocity
+
         self.step_count += 1
         if self._action_group_player:
             self._action_group_player.advance(self.model.opt.timestep)
