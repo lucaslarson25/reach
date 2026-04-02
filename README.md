@@ -13,7 +13,6 @@ The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 
 - [Arm Reach Training](#arm-reach-training-primary-workflow) — supported arms, train/run commands, config, policy paths
 - [Adding a new arm (full guide)](#adding-a-new-arm-full-guide) — upload, template, registry, overrides
 - [Downloading an arm from GitHub](#downloading-an-arm-from-github) — clone/ZIP, copy subtree, train/run
-- [Adding a new leg (biped)](#adding-a-new-leg-biped)
 - [YAML Configuration](#yaml-configuration)
 - [AINex Humanoid](#ainex-humanoid-reach--stand)
 - [Other Scenes](#other-scenes)
@@ -572,36 +571,6 @@ my_robot:
 
 ---
 
-## Adding a new leg (biped)
-
-Train any biped to walk toward a ball. Uses a **GNN policy** that adapts to any morphology.
-
-**Quick start:** 1) Drop biped MJCF into `scenes/legs/models/bipeds/<leg_id>/`. 2) Train: `python scripts/train_legs.py --leg-id <leg_id> --steps 500000`. 3) Run: `mjpython scripts/run_legs.py --leg-id <leg_id>`.
-
-**Convention:** Prefer `<leg_id>.xml`; otherwise the first non-`_composed` XML in the folder is used.
-
-**Requirements:** **Floating base** (root body with `freejoint`); the composed scene adds the ball. Set **`torso_body_name`** in the registry (root/pelvis body).
-
-**Registry** (`scenes/legs/leg_registry.py`):
-
-```python
-"my_biped": LegConfig(
-    name="My Biped",
-    leg_path="bipeds/my_biped/robot.xml",
-    torso_body_name="pelvis",
-    home_keyframe_name="home",
-    ball_dist_min=1.0,
-    ball_dist_max=5.0,
-    ball_side_extent=2.0,
-),
-```
-
-**Overrides** (`config/leg_overrides.yaml`): `ball_dist_min`, `ball_dist_max`, `initial_pose`, `joint_limit_margin_penalty`, etc.
-
-**Training tips:** `frame_skip` (4–5), `action_scale` (0.5–0.8), `total_steps` (1M+ for legs). **Reference:** Agility Cassie is under `scenes/legs/models/bipeds/agility_cassie/`.
-
----
-
 ## YAML Configuration
 
 ### Arm Reach (`config/arms.yaml`)
@@ -682,10 +651,9 @@ Uses **action groups** for leg walking (from `assets/action_groups/csv/`) and **
 
 Jupyter notebooks for experimentation and analysis (`scenes/cartpole/`): `01_environment_testing.ipynb`, `02_policy_analysis.ipynb`, `03_reward_tuning.ipynb`, `04_data_analysis.ipynb`, `05_visualization.ipynb`. Run `jupyter notebook` or `jupyter lab`.
 
-### Humanoid / Legs
+### Humanoid
 
 - **scenes/humanoid/** – Placeholder for full-body humanoid scenes. AINex humanoid content is under `scenes/ainex_soccer/`.
-- **scenes/legs/** – Placeholder for legs-only scenes (bipedal walking, quadruped, etc.).
 
 ### Image Recognition (Gesture Control)
 
@@ -833,18 +801,6 @@ You can train the ball-reaching policy on **any arm** by adding it to the regist
   `python scripts/train.py --arm-id <arm_id>`
 - **If problems occur:** Edit `config/arm_overrides.yaml` for that arm (tighter ball band, random init, joint-limit penalty).
 - **Full guide:** See [Adding a new arm (full guide)](#adding-a-new-arm-full-guide) in this README.
-
-### Legs (Biped Locomotion)
-
-Train bipeds to walk toward a ball. Uses Agility Cassie from [MuJoCo Menagerie](https://mujoco.readthedocs.io/en/stable/models.html).
-
-- **Train:** `python scripts/train_legs.py --leg-id agility_cassie --steps 500000`
-- **Run:** `mjpython scripts/run_legs.py --leg-id agility_cassie`
-- **Add leg:** Place MJCF in `scenes/legs/models/bipeds/<leg_id>/` and register in `leg_registry.py`
-- **Overrides:** `config/leg_overrides.yaml` for per-leg ball placement and penalties
-- **Full guide:** See [Adding a new leg (biped)](#adding-a-new-leg-biped) in this README.
-
-**Note:** There is no reference walking gait or motion capture; the policy learns from scratch. **Where rewards go for walking:** (1) move toward ball (forward/distance), (2) stay upright and at target height, (3) stay near the “home” standing pose so it doesn’t retract a leg, (4) avoid lateral slide and torso tilt, (5) encourage quick foot return—bonus when a foot lands (`reward_landing_scale`), penalty for each step a foot is in the air (`penalty_air_time`). Tune these in `config/legs.yaml` if the robot retracts a leg or slides.
 
 ---
 
