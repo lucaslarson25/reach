@@ -5,22 +5,23 @@
     <joint damping="18" armature="0.02" limited="true" frictionloss="0.8"/>
     <default class="xarm7">
       <geom type="mesh" material="white"/>
-      <joint axis="0 0 1" armature="0.1" range="-6.28319 6.28319" frictionloss="0.5"/>
+      <joint axis="0 0 1" armature="0.008" range="-6.28319 6.28319" frictionloss="0.30413813"/>
       <general biastype="affine" ctrlrange="-6.28319 6.28319"/>
       <default class="size1">
-        <joint damping="8"/>
-        <general gainprm="1500" biasprm="0 -1500 -150" forcerange="-50 50"/>
+        <joint damping="1.2"/>
+        <general gainprm="75.9795" biasprm="0 -75.9795 -12" forcerange="-6 6"/>
       </default>
       <default class="size2">
-        <joint damping="5"/>
-        <general gainprm="1000" biasprm="0 -1000 -100" forcerange="-30 30"/>
+        <joint damping="0.9"/>
+        <general gainprm="50.653" biasprm="0 -50.653 -10" forcerange="-4 4"/>
       </default>
       <default class="size3">
-        <joint damping="3"/>
-        <general gainprm="800" biasprm="0 -800 -80" forcerange="-20 20"/>
+        <joint damping="0.55"/>
+        <general gainprm="40.5224" biasprm="0 -40.5224 -8" forcerange="-3 3"/>
       </default>
-      <site size="0.001" rgba="1 0 0 1" group="4"/>
+      <site size="0.00037" rgba="1 0 0 1" group="4"/>
     </default>
+
     <geom friction="1.0 0.1 0.1" solref="0.02 1" solimp="0.9 0.95 0.001" condim="4"/>
   </default>
 
@@ -52,15 +53,15 @@
     <mesh name="l_el_pitch_link" content_type="model/stl" file="../../assets/ainex/meshes/l_el_pitch_link.STL"/>
     <mesh name="l_el_yaw_link" content_type="model/stl" file="../../assets/ainex/meshes/l_el_yaw_link.STL"/>
     <mesh name="l_gripper_link" content_type="model/stl" file="../../assets/ainex/meshes/l_gripper_link.STL"/>
-    <mesh name="link_base" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link_base.stl"/>
-    <mesh name="link1" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link1.stl"/>
-    <mesh name="link2" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link2.stl"/>
-    <mesh name="link3" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link3.stl"/>
-    <mesh name="link4" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link4.stl"/>
-    <mesh name="link5" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link5.stl"/>
-    <mesh name="link6" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link6.stl"/>
-    <mesh name="link7" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/link7.stl"/>
-    <mesh name="end_tool" content_type="model/stl" file="../../scenes/arms/models/arms/xarm7/assets/end_tool.stl"/>
+    <mesh name="link_base" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link_base.stl"/>
+    <mesh name="link1" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link1.stl"/>
+    <mesh name="link2" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link2.stl"/>
+    <mesh name="link3" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link3.stl"/>
+    <mesh name="link4" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link4.stl"/>
+    <mesh name="link5" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link5.stl"/>
+    <mesh name="link6" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link6.stl"/>
+    <mesh name="link7" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/link7.stl"/>
+    <mesh name="end_tool" content_type="model/stl" scale="0.37 0.37 0.37" file="../../scenes/arms/models/arms/xarm7/assets/end_tool.stl"/>
   </asset>
 
   <worldbody>
@@ -82,46 +83,46 @@
         <joint name="r_hip_yaw" pos="0 0 0" axis="0 0 -1" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.02"/>
         <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_yaw_link"/>
 
-            <body name="link_base" pos="0 -0.055 0.01" quat="0.6532815 0.2705981 -0.6532815 0.2705981" childclass="xarm7">
-              <inertial pos="-0.021131 -0.0016302 0.056488" quat="0.696843 0.20176 0.10388 0.680376" mass="0.88556"
-                diaginertia="0.00382023 0.00335282 0.00167725"/>
+            <body name="link_base" pos="0 -0.02035 0.0037" quat="0.6532815 0.2705981 -0.6532815 0.2705981" childclass="xarm7">
+              <inertial pos="-0.00781847 -0.000603174 0.02090056" quat="0.696843 0.20176 0.10388 0.680376" mass="0.044856271"
+                diaginertia="2.6490986e-5 2.3249781e-5 1.1630715e-5"/>
               <geom mesh="link_base"/>
-              <body name="link1" pos="0 0 0.267">
-                <inertial pos="-0.0002 0.02905 -0.01233" quat="0.978953 -0.202769 -0.00441617 -0.0227264" mass="2.382"
-                  diaginertia="0.00569127 0.00533384 0.00293865"/>
+              <body name="link1" pos="0 0 0.09879">
+              <inertial pos="-7.4e-5 0.0107485 -0.0045621" quat="0.978953 -0.202769 -0.00441617 -0.0227264" mass="0.12065545"
+                diaginertia="3.9465518e-5 3.6986957e-5 2.0377762e-5"/>
                 <joint name="joint1" class="size1"/>
                 <geom mesh="link1"/>
                 <body name="link2" quat="1 -1 0 0">
-                  <inertial pos="0.00022 -0.12856 0.01735" quat="0.50198 0.86483 -0.00778841 0.00483285" mass="1.869"
-                    diaginertia="0.00959898 0.00937717 0.00201315"/>
+              <inertial pos="8.14e-5 -0.0475672 0.0064195" quat="0.50198 0.86483 -0.00778841 0.00483285" mass="0.094670457"
+                diaginertia="6.6563126e-5 6.5025007e-5 1.3959979e-5"/>
                   <joint name="joint2" range="-2.059 2.0944" class="size1"/>
                   <geom mesh="link2"/>
-                  <body name="link3" pos="0 -0.293 0" quat="1 1 0 0">
-                    <inertial pos="0.0466 -0.02463 -0.00768" quat="0.913819 0.289775 0.281481 -0.0416455" mass="1.6383"
-                      diaginertia="0.00351721 0.00294089 0.00195868"/>
+                  <body name="link3" pos="0 -0.10841 0" quat="1 1 0 0">
+              <inertial pos="0.017242 -0.0091131 -0.0028416" quat="0.913819 0.289775 0.281481 -0.0416455" mass="0.08298481"
+                diaginertia="2.4389726e-5 2.0393295e-5 1.3582262e-5"/>
                     <joint name="joint3" class="size2"/>
                     <geom mesh="link3"/>
-                    <body name="link4" pos="0.0525 0 0" quat="1 1 0 0">
-                      <inertial pos="0.07047 -0.11575 0.012" quat="0.422108 0.852026 -0.126025 0.282832" mass="1.7269"
-                        diaginertia="0.00657137 0.00647948 0.00186763"/>
+                    <body name="link4" pos="0.019425 0 0" quat="1 1 0 0">
+              <inertial pos="0.0260739 -0.0428275 0.00444" quat="0.422108 0.852026 -0.126025 0.282832" mass="0.087472666"
+                diaginertia="4.556848e-5 4.4931278e-5 1.2950885e-5"/>
                       <joint name="joint4" range="-0.19198 3.927" class="size2"/>
                       <geom mesh="link4"/>
-                      <body name="link5" pos="0.0775 -0.3425 0" quat="1 1 0 0">
-                        <inertial pos="-0.00032 0.01604 -0.026" quat="0.999311 -0.0304457 0.000577067 0.0212082" mass="1.3203"
-                          diaginertia="0.00534729 0.00499076 0.0013489"/>
+                      <body name="link5" pos="0.028675 -0.126725 0" quat="1 1 0 0">
+              <inertial pos="-0.0001184 0.0059348 -0.00962" quat="0.999311 -0.0304457 0.000577067 0.0212082" mass="0.066877156"
+                diaginertia="3.7080225e-5 3.4607905e-5 9.3538064e-6"/>
                         <joint name="joint5" class="size2"/>
                         <geom mesh="link5"/>
                         <body name="link6" quat="1 1 0 0">
-                          <inertial pos="0.06469 0.03278 0.02141" quat="-0.217672 0.772419 0.16258 0.574069" mass="1.325"
-                            diaginertia="0.00245421 0.00221646 0.00107273"/>
+              <inertial pos="0.0239353 0.0121286 0.0079217" quat="-0.217672 0.772419 0.16258 0.574069" mass="0.067115225"
+                diaginertia="1.7018463e-5 1.5369811e-5 7.4387343e-6"/>
                           <joint name="joint6" range="-1.69297 3.14159" class="size3"/>
                           <geom mesh="link6"/>
-                          <body name="link7" pos="0.076 0.097 0" quat="1 -1 0 0">
-                            <inertial pos="0 -0.00677 -0.01098" quat="0.487612 0.512088 -0.512088 0.487612" mass="0.17"
-                              diaginertia="0.000132176 9.3e-05 5.85236e-05"/>
+                          <body name="link7" pos="0.02812 0 0.03589" quat="1 -1 0 0">
+              <inertial pos="0 -0.0025049 -0.0040626" quat="0.487612 0.512088 -0.512088 0.487612" mass="0.00861101"
+                diaginertia="9.1656069e-7 6.448988e-7 4.058258e-7"/>
                             <joint name="joint7" class="size3"/>
                             <geom material="gray" mesh="end_tool"/>
-                            <site name="attachment_site" size="0.002" rgba="0 1 0 1"/>
+                            <site name="attachment_site" size="0.00074" rgba="0 1 0 1"/>
                           </body>
                         </body>
                       </body>
