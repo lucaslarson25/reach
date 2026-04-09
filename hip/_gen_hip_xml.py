@@ -262,6 +262,7 @@ def main() -> None:
     print("This script only updates the XML on disk; it does not open a viewer.")
     print("To see the scene: python3 -m hip.run_demo")
     print("  (on macOS use: .venv/bin/mjpython -m hip.run_demo)")
+    print("RL (PPO): python3 -m hip.train_hip_reach  then  mjpython -m hip.run_policy --model policies/hip_reach_ppo_50k.zip")
 
 
 if __name__ == "__main__":

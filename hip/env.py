@@ -53,10 +53,12 @@ class HipReachEnv(gym.Env):
         max_steps: int = 500,
         ball_xyz_low: tuple[float, float, float] = (0.22, -0.2, 0.22),
         ball_xyz_high: tuple[float, float, float] = (0.48, 0.2, 0.55),
+        success_bonus: float = 0.0,
     ):
         super().__init__()
         self.render_mode = render_mode
         self.max_steps = max_steps
+        self._success_bonus = float(success_bonus)
         self.ball_low = np.array(ball_xyz_low, dtype=np.float64)
         self.ball_high = np.array(ball_xyz_high, dtype=np.float64)
         path = model_path or _model_path()
@@ -159,10 +161,13 @@ class HipReachEnv(gym.Env):
         err = self.data.qpos[self._ball_qadr : self._ball_qadr + 3] - self.data.site_xpos[
             self._site_ee
         ]
-        reward = -float(np.linalg.norm(err))
-        terminated = bool(np.linalg.norm(err) < 0.05)
+        dist = float(np.linalg.norm(err))
+        reward = -dist
+        terminated = bool(dist < 0.05)
+        if terminated and self._success_bonus != 0.0:
+            reward += self._success_bonus
         truncated = self._step_count >= self.max_steps
-        return obs, reward, terminated, truncated, {}
+        return obs, reward, terminated, truncated, {"terminated": terminated, "truncated": truncated}
 
     def close(self):
         if self._viewer is not None:
