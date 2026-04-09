@@ -14,6 +14,16 @@ REPO = ROOT.parent
 # ~0.35–0.40 matches Ainex upper+lower arm length tier (~0.25–0.30 m vs ~0.8 m full xArm).
 XARM_LENGTH_SCALE = 0.37
 
+# Torso world Z so feet rest near the floor (z=0) with hip.env nominal limp pose.
+TORSO_Z = 0.245
+# Initial ball position (free joint); random resets use env ball box.
+BALL_SPAWN_XYZ = "0.38 0 0.42"
+# Task site on r_gripper_link frame: pushed toward open-claw tip (-Y in local mesh frame).
+GRIPPER_TIP_POS = "0.052 -0.095 0.018"
+GRIPPER_TIP_SIZE = "0.006"
+# Weld xArm flange to hand base (wrist side) instead of mid-forearm (r_el_yaw_link).
+XARM_WELD_BODY2 = "r_gripper_link"
+
 XARM_MESH = "../../scenes/arms/models/arms/xarm7/assets/{name}.stl"
 
 
@@ -184,7 +194,10 @@ def main() -> None:
         "    <!-- <geom name=\"floor\" type=\"plane\" pos=\"0 0 -0.05\" size=\"5 5 0.1\" rgba=\"0.9 0.9 0.9 1\" friction=\"1.2 0.3 0.3\"/> -->",
         '    <geom name="floor" type="plane" pos="0 0 0" size="5 5 0.1" rgba="0.92 0.92 0.92 1" friction="1.2 0.3 0.3"/>',
     )
-    text = text.replace('<body name="torso" pos="0 0 0">', '<body name="torso" pos="0 0 1.05">')
+    text = text.replace(
+        '<body name="torso" pos="0 0 0">',
+        f'<body name="torso" pos="0 0 {TORSO_Z}">',
+    )
 
     needle = """        <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_yaw_link"/>
         <body name="r_hip_roll_link\""""
@@ -199,16 +212,16 @@ def main() -> None:
         '<geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_gripper_link"/>\n'
         "              </body>",
         '<geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_gripper_link"/>\n'
-        '                <site name="r_gripper_tip" pos="0.03 0 0.01" size="0.008" rgba="1 0.2 0.2 1"/>\n'
+        f'                <site name="r_gripper_tip" pos="{GRIPPER_TIP_POS}" size="{GRIPPER_TIP_SIZE}" rgba="1 0.2 0.2 1"/>\n'
         "              </body>",
         1,
     )
 
     text = text.replace(
         "    </body>\n  </worldbody>",
-        """    </body>
+        f"""    </body>
 
-    <body name="ball" pos="0.45 0 1.15">
+    <body name="ball" pos="{BALL_SPAWN_XYZ}">
       <freejoint/>
       <geom name="ball_geom" type="sphere" size="0.03" rgba="0.9 0.2 0.2 1" mass="0.08" contype="1" conaffinity="1"/>
     </body>
@@ -230,10 +243,10 @@ def main() -> None:
   </actuator>"""
     text = text[:act_start] + xarm_act + text[act_end:]
 
-    eq_block = """
+    eq_block = f"""
   <equality>
-    <!-- Identity relpose: force link7 and Ainex forearm frames to coincide (not the default-qpos offset). -->
-    <weld name="xarm_wrist" body1="link7" body2="r_el_yaw_link" relpose="0 0 0 1 0 0 0"
+    <!-- link7 welded to {XARM_WELD_BODY2} (wrist / hand base); identity relpose at compile pose. -->
+    <weld name="xarm_wrist" body1="link7" body2="{XARM_WELD_BODY2}" relpose="0 0 0 1 0 0 0"
       solref="0.02 1" solimp="0.99 0.999 0.0001 0.5 2"/>
   </equality>
 """

@@ -51,8 +51,8 @@ class HipReachEnv(gym.Env):
         render_mode: str | None = None,
         model_path: str | None = None,
         max_steps: int = 500,
-        ball_xyz_low: tuple[float, float, float] = (0.32, -0.18, 0.95),
-        ball_xyz_high: tuple[float, float, float] = (0.52, 0.18, 1.22),
+        ball_xyz_low: tuple[float, float, float] = (0.22, -0.2, 0.22),
+        ball_xyz_high: tuple[float, float, float] = (0.48, 0.2, 0.55),
     ):
         super().__init__()
         self.render_mode = render_mode
