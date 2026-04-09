@@ -258,7 +258,10 @@ def main() -> None:
     out = ROOT / "models" / "hip_reach.xml"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text)
-    print("Wrote", out, f"(xArm length scale={s})")
+    print("Wrote", out.resolve(), f"(xArm length scale={s})")
+    print("This script only updates the XML on disk; it does not open a viewer.")
+    print("To see the scene: python3 -m hip.run_demo")
+    print("  (on macOS use: .venv/bin/mjpython -m hip.run_demo)")
 
 
 if __name__ == "__main__":
