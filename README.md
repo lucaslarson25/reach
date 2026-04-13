@@ -13,6 +13,7 @@ The system runs cross-platform on **macOS (M-series)** and **Windows/Linux (x86 
 - [Arm Reach Training](#arm-reach-training-primary-workflow) — supported arms, train/run commands, config, policy paths
 - [Adding a new arm (full guide)](#adding-a-new-arm-full-guide) — upload, template, registry, overrides
 - [Downloading an arm from GitHub](#downloading-an-arm-from-github) — clone/ZIP, copy subtree, train/run
+- [Demonstration (US-2 / US-3)](#demonstration-us-2-us-3) — mentor demo: adaptability + documentation
 - [YAML Configuration](#yaml-configuration)
 - [AINex Humanoid](#ainex-humanoid-reach--stand)
 - [Other Scenes](#other-scenes)
@@ -568,6 +569,35 @@ my_robot:
 | Arm folds / self-collision | `joint_limit_margin_penalty` | `0.015`–`0.03` |
 
 **Cheat sheet (new arm):** `train <arm_id> [steps]` then `run <arm_id> [steps]`. Optional: registry and/or overrides.
+
+---
+
+## Demonstration (US-2 / US-3)
+
+This subsection supports capstone **user stories** for reviewers: **US-2** (framework adaptability: new arms, YAML, universal train/run) and **US-3** (documentation and delivery readiness).
+
+### US-2 — Framework adaptability (suggested flow)
+
+| Step | What to demonstrate |
+|------|---------------------|
+| 1–2 | **New model:** Copy a MuJoCo arm (e.g. from [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) or another repo) into `scenes/arms/models/arms/<arm_id>/`, including meshes and includes. Show the folder in the tree; main XML must be `arm.xml`, `<arm_id>.xml`, or `scene.xml` (see [Downloading an arm from GitHub](#downloading-an-arm-from-github)). |
+| 3 | **YAML:** Open `config/arms.yaml` and set `scene.arm_id` to that `<arm_id>`. Leave `scene.model_path: null` for composed reach scenes, or set `model_path` to a full scene path if needed. Adjust `train.*` (steps, rewards, `reach_max_cap`, etc.). Optional: `config/arm_overrides.yaml` and `scenes/arms/arm_registry.py` for EE site, reach, and keyframe. |
+| 4 | **Simulation from config:** From the repo root with the venv active, run `run <arm_id>` (or `mjpython -m scenes.arms.training.run_simulation --config config/arms.yaml --arm-id <arm_id>` on macOS). The default config path is `config/arms.yaml`; the MuJoCo viewer opens with the composed scene. |
+| 5 | **Train (universal entry point):** `train <arm_id>` or `python scripts/train.py --arm-id <arm_id>` — same YAML stack as run. For a live demo with limited time, use fewer steps, e.g. `train <arm_id> 50000`. |
+| 6 | **Replay policy:** `run <arm_id>` loads `policies/ppo_arms_<arm_id>_mac_<k>k.zip` according to [Policy paths](#policy-paths). If the saved zip does not match `train.total_steps` in YAML, pass it explicitly: `mjpython scripts/run.py --arm-id <arm_id> --model policies/...` (macOS). |
+| 7 | **Why this beats scratch:** Point to [Project Structure](#project-structure): config in `config/`, reach logic in `scenes/arms/` (`env.py`, `arm_registry.py`, `arm_discovery.py`, `scene_compose.py`), policies in `policies/`. The framework adds floor and ball via composition; a greenfield project would reimplement env observations, rewards, PPO wiring, and viewers. |
+
+**Note:** `renders/render_demo_mac.py` with `config/render_run.yaml` is the YAML pattern for environments that specify `env_class`, `model_xml`, and `policy.path` (e.g. AINex or legacy industrial scenes). **Arm reach** uses the unified **`train` / `run`** commands and **`config/arms.yaml`** end-to-end.
+
+### US-3 — Documentation and delivery readiness (what to show)
+
+- **Onboarding:** This README — quick start, [Arm Reach Training](#arm-reach-training-primary-workflow), [Adding a new arm (full guide)](#adding-a-new-arm-full-guide), [YAML Configuration](#yaml-configuration), [Troubleshooting](#troubleshooting).
+- **Architecture and limits:** `documentation/system_design.md`.
+- **HPC / reproducibility:** `documentation/monsoon_setup.md` and [Training on NAU Monsoon HPC](#training-on-nau-monsoon-hpc).
+- **Packaging:** `pyproject.toml` (`train`, `run`, and optional `reach-*` scripts after `pip install -e .`).
+- **Quality checks:** `tests/smoke_test.py`, pinned dependencies in `requirements.txt`.
+
+**Delivery narrative:** Configuration is externalized (YAML + env overrides), platforms are documented (macOS `mjpython` vs Windows/Linux), and new arms follow a documented upload path without forking the training stack.
 
 ---
 
