@@ -74,7 +74,8 @@ def main() -> None:
     if not model_path.is_file():
         print(f"Missing model file: {model_path}", file=sys.stderr)
         raise SystemExit(1)
-    model = PPO.load(str(model_path), env=env)
+    # Load without env to avoid SB3 wrapping in Monitor/DummyVecEnv (inference-only).
+    model = PPO.load(str(model_path), env=None)
 
     obs, _ = env.reset(seed=int(time.time()) % 2**31)
     m, d = env.model, env.data

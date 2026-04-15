@@ -22,8 +22,8 @@ XARM_LENGTH_SCALE = 0.37
 TORSO_Z = 0.245
 # Initial ball position (free joint); random resets use env ball box.
 BALL_SPAWN_XYZ = "0.38 0 0.42"
-# Task site on r_gripper_link frame: pushed toward open-claw tip (-Y in local mesh frame).
-GRIPPER_TIP_POS = "0.052 -0.095 0.018"
+# Task site on r_gripper_link frame: between pinch jaws, slightly forward (+X), not on ulnar/pinky side.
+GRIPPER_TIP_POS = "0.078 -0.038 0.012"
 GRIPPER_TIP_SIZE = "0.006"
 # Weld xArm flange to hand base (wrist side) instead of mid-forearm (r_el_yaw_link).
 XARM_WELD_BODY2 = "r_gripper_link"

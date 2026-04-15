@@ -54,11 +54,13 @@ class HipReachEnv(gym.Env):
         ball_xyz_low: tuple[float, float, float] = (0.22, -0.2, 0.22),
         ball_xyz_high: tuple[float, float, float] = (0.48, 0.2, 0.55),
         success_bonus: float = 0.0,
+        progress_coef: float = 2.0,
     ):
         super().__init__()
         self.render_mode = render_mode
         self.max_steps = max_steps
         self._success_bonus = float(success_bonus)
+        self._progress_coef = float(progress_coef)
         self.ball_low = np.array(ball_xyz_low, dtype=np.float64)
         self.ball_high = np.array(ball_xyz_high, dtype=np.float64)
         path = model_path or _model_path()
@@ -76,20 +78,25 @@ class HipReachEnv(gym.Env):
         self._ball_dofadr = _free_joint_dofadr(self.model)
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(7,), dtype=np.float32)
+        # qpos, qvel, (ball - ee) world; ball pose is still in qpos for the free joint.
         n_obs = self.model.nq + self.model.nv + 3
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(n_obs,), dtype=np.float32
         )
         self._step_count = 0
         self._viewer = None
+        self._prev_dist: float = 1.0
 
     def freeze_ball_velocity(self) -> None:
         self.data.qvel[self._ball_dofadr : self._ball_dofadr + 6] = 0.0
 
     def _get_obs(self) -> np.ndarray:
+        mujoco.mj_forward(self.model, self.data)
         ball_pos = self.data.qpos[self._ball_qadr : self._ball_qadr + 3].astype(np.float64)
+        ee = self.data.site_xpos[self._site_ee].astype(np.float64)
+        delta = (ball_pos - ee).astype(np.float32)
         return np.concatenate(
-            [self.data.qpos, self.data.qvel, ball_pos.astype(np.float32)]
+            [self.data.qpos, self.data.qvel, delta]
         ).astype(np.float32)
 
     def reset(
@@ -109,7 +116,11 @@ class HipReachEnv(gym.Env):
         self.data.qvel[:] = 0.0
         self._set_nominal_limp_pose()
         mujoco.mj_forward(self.model, self.data)
-        return self._get_obs(), {}
+        obs = self._get_obs()
+        bp = self.data.qpos[self._ball_qadr : self._ball_qadr + 3]
+        ee = self.data.site_xpos[self._site_ee]
+        self._prev_dist = float(np.linalg.norm(bp - ee))
+        return obs, {}
 
     def _set_nominal_limp_pose(self) -> None:
         """Standing-ish legs and right arm extended forward-ish; xArm near menagerie home."""
@@ -156,17 +167,19 @@ class HipReachEnv(gym.Env):
         mujoco.mj_step(self.model, self.data)
         self.freeze_ball_velocity()
         self._step_count += 1
-        obs = self._get_obs()
         mujoco.mj_forward(self.model, self.data)
         err = self.data.qpos[self._ball_qadr : self._ball_qadr + 3] - self.data.site_xpos[
             self._site_ee
         ]
         dist = float(np.linalg.norm(err))
-        reward = -dist
+        progress = self._prev_dist - dist
+        self._prev_dist = dist
+        reward = -dist + self._progress_coef * progress
         terminated = bool(dist < 0.05)
         if terminated and self._success_bonus != 0.0:
             reward += self._success_bonus
         truncated = self._step_count >= self.max_steps
+        obs = self._get_obs()
         return obs, reward, terminated, truncated, {"terminated": terminated, "truncated": truncated}
 
     def close(self):

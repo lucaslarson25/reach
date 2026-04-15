@@ -104,7 +104,7 @@ def main() -> None:
     set_random_seed(args.seed)
 
     def make_env() -> HipReachEnv:
-        return HipReachEnv(success_bonus=bonus)
+        return HipReachEnv(success_bonus=bonus, progress_coef=2.0)
 
     env = DummyVecEnv([make_env])
 
@@ -118,6 +118,7 @@ def main() -> None:
         batch_size=128,
         n_epochs=10,
         learning_rate=3e-4,
+        ent_coef=0.02,
         verbose=1,
         seed=args.seed,
         tensorboard_log=tb,

@@ -222,7 +222,7 @@
                 <inertial pos="-0.0193851 -0.00931115 -0.00543048" quat="0.15915 0.685412 0.178235 0.687833" mass="0.0135" diaginertia="6.51914e-06 3.96161e-06 3.27925e-06"/>
                 <joint name="r_gripper" pos="0 0 0" axis="1 0 0" range="-2.09 2.09" actuatorfrcrange="-6 6" frictionloss="0.2"/>
                 <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_gripper_link"/>
-                <site name="r_gripper_tip" pos="0.052 -0.095 0.018" size="0.006" rgba="1 0.2 0.2 1"/>
+                <site name="r_gripper_tip" pos="0.078 -0.038 0.012" size="0.006" rgba="1 0.2 0.2 1"/>
               </body>
             </body>
           </body>
