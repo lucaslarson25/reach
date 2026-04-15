@@ -2,6 +2,10 @@
 """Generate hip/models/hip_reach.xml (run from repo root or hip/).
 
 Scales the embedded xArm7 so its span is closer to the Ainex humanoid arm.
+The xArm ``link_base`` is parented to ``torso`` at the right-hip pocket offset so leg
+DOFs do not twist under arm wrenches; ``link7`` is welded to ``r_gripper_link`` with a
+stiff equality constraint.
+
 Tweak XARM_LENGTH_SCALE (0–1, vs full-size menagerie arm) if the weld or reach misbehaves.
 """
 from __future__ import annotations
@@ -23,8 +27,15 @@ GRIPPER_TIP_POS = "0.052 -0.095 0.018"
 GRIPPER_TIP_SIZE = "0.006"
 # Weld xArm flange to hand base (wrist side) instead of mid-forearm (r_el_yaw_link).
 XARM_WELD_BODY2 = "r_gripper_link"
+# Stiff equality so link7 and hand do not visibly separate (soft solref looks "detached").
+WELD_SOLREF = "0.001 1"
+WELD_SOLIMP = "0.9999 0.99999 1e-5 0.9 2"
+# Extra damping on right-leg hip joints (arm reactions used to twist r_hip_yaw when base was there).
+RIGHT_HIP_JOINT_DAMPING = "1.5"
 
 XARM_MESH = "../../scenes/arms/models/arms/xarm7/assets/{name}.stl"
+# r_hip_yaw_link offset from torso in ainex (m); arm pocket offset is added in torso frame.
+AINEX_R_HIP_YAW_POS_Y = -0.029
 
 
 def _f(x: float) -> str:
@@ -88,11 +99,10 @@ def build_xarm_defaults(s: float) -> str:
     </default>"""
 
 
-def build_xarm_subtree(s: float) -> str:
+def build_xarm_subtree(s: float, base_pos: tuple[float, float, float]) -> str:
     s3, s5 = s**3, s**5
 
-    # Mount on hip: scale offset with arm so the base stays in the hip pocket.
-    mbx, mby, mbz = 0.0, -0.055 * s, 0.01 * s
+    bx, by, bz = base_pos
 
     def block_inertial(pos, quat, mass, diag):
         px, py, pz = pos
@@ -111,7 +121,7 @@ def build_xarm_subtree(s: float) -> str:
     x7, z7 = 0.076 * s, 0.097 * s
 
     return f"""
-            <body name="link_base" pos="{_f(mbx)} {_f(mby)} {_f(mbz)}" quat="0.6532815 0.2705981 -0.6532815 0.2705981" childclass="xarm7">
+            <body name="link_base" pos="{_f(bx)} {_f(by)} {_f(bz)}" quat="0.6532815 0.2705981 -0.6532815 0.2705981" childclass="xarm7">
 {block_inertial((-0.021131, -0.0016302, 0.056488), "0.696843 0.20176 0.10388 0.680376", 0.88556, (0.00382023, 0.00335282, 0.00167725))}
               <geom mesh="link_base"/>
               <body name="link1" pos="0 0 {_f(z1)}">
@@ -156,7 +166,10 @@ def build_xarm_subtree(s: float) -> str:
 
 def main() -> None:
     s = XARM_LENGTH_SCALE
-    xarm_subtree = build_xarm_subtree(s)
+    # Pocket offset was tuned as child of r_hip_yaw; parent on torso = hip offset + same local offset.
+    mbx, mby, mbz = 0.0, -0.055 * s, 0.01 * s
+    base_torso = (mbx, AINEX_R_HIP_YAW_POS_Y + mby, mbz)
+    xarm_subtree = build_xarm_subtree(s, base_torso)
     xarm_meshes = build_xarm_assets(s)
     xarm_defaults_inner = build_xarm_defaults(s)
 
@@ -199,14 +212,32 @@ def main() -> None:
         f'<body name="torso" pos="0 0 {TORSO_Z}">',
     )
 
-    needle = """        <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_yaw_link"/>
-        <body name="r_hip_roll_link\""""
-    repl = """        <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_yaw_link"/>
+    # Mount xArm on torso (same world pose as old hip-yaw child) so leg/hip DOFs do not carry arm wrench.
+    needle_torso = """      <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="body_link"/>
+      <body name="r_hip_yaw_link\""""
+    repl_torso = """      <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="body_link"/>
 """ + xarm_subtree + """
-        <body name="r_hip_roll_link\""""
-    if needle not in text:
-        raise SystemExit("insertion point not found")
-    text = text.replace(needle, repl, 1)
+      <body name="r_hip_yaw_link\""""
+    if needle_torso not in text:
+        raise SystemExit("torso insertion point not found")
+    text = text.replace(needle_torso, repl_torso, 1)
+
+    dhip = RIGHT_HIP_JOINT_DAMPING
+    text = text.replace(
+        '<joint name="r_hip_yaw" pos="0 0 0" axis="0 0 -1" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.02"/>',
+        f'<joint name="r_hip_yaw" pos="0 0 0" axis="0 0 -1" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="{dhip}"/>',
+        1,
+    )
+    text = text.replace(
+        '<joint name="r_hip_roll" pos="0 0 0" axis="-1 0 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.02"/>',
+        f'<joint name="r_hip_roll" pos="0 0 0" axis="-1 0 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="{dhip}"/>',
+        1,
+    )
+    text = text.replace(
+        '<joint name="r_hip_pitch" pos="0 0 0" axis="0 -1 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.02"/>',
+        f'<joint name="r_hip_pitch" pos="0 0 0" axis="0 -1 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="{dhip}"/>',
+        1,
+    )
 
     text = text.replace(
         '<geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_gripper_link"/>\n'
@@ -247,7 +278,7 @@ def main() -> None:
   <equality>
     <!-- link7 welded to {XARM_WELD_BODY2} (wrist / hand base); identity relpose at compile pose. -->
     <weld name="xarm_wrist" body1="link7" body2="{XARM_WELD_BODY2}" relpose="0 0 0 1 0 0 0"
-      solref="0.02 1" solimp="0.99 0.999 0.0001 0.5 2"/>
+      solref="{WELD_SOLREF}" solimp="{WELD_SOLIMP}"/>
   </equality>
 """
     text = text.replace("</mujoco>", eq_block + "\n</mujoco>")

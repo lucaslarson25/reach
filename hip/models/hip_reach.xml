@@ -78,12 +78,8 @@
     <!-- robot declaration -->
     <body name="torso" pos="0 0 0.245">
       <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="body_link"/>
-      <body name="r_hip_yaw_link" pos="0 -0.029 0">
-        <inertial pos="-3.08089e-05 0.00125727 -0.00137107" quat="0.685451 0.035864 -0.0116524 0.727142" mass="0.032" diaginertia="2.27792e-05 1.75538e-05 8.97703e-06"/>
-        <joint name="r_hip_yaw" pos="0 0 0" axis="0 0 -1" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.02"/>
-        <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_yaw_link"/>
 
-            <body name="link_base" pos="0 -0.02035 0.0037" quat="0.6532815 0.2705981 -0.6532815 0.2705981" childclass="xarm7">
+            <body name="link_base" pos="0 -0.04935 0.0037" quat="0.6532815 0.2705981 -0.6532815 0.2705981" childclass="xarm7">
               <inertial pos="-0.00781847 -0.000603174 0.02090056" quat="0.696843 0.20176 0.10388 0.680376" mass="0.044856271"
                 diaginertia="2.6490986e-5 2.3249781e-5 1.1630715e-5"/>
               <geom mesh="link_base"/>
@@ -132,13 +128,17 @@
               </body>
             </body>
 
+      <body name="r_hip_yaw_link" pos="0 -0.029 0">
+        <inertial pos="-3.08089e-05 0.00125727 -0.00137107" quat="0.685451 0.035864 -0.0116524 0.727142" mass="0.032" diaginertia="2.27792e-05 1.75538e-05 8.97703e-06"/>
+        <joint name="r_hip_yaw" pos="0 0 0" axis="0 0 -1" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="1.5"/>
+        <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_yaw_link"/>
         <body name="r_hip_roll_link" pos="-0.01955 0 -0.0255">
           <inertial pos="0.0013624 -0.000566876 -0.0134187" quat="0.498207 0.491474 0.501276 0.508887" mass="0.12" diaginertia="7.31184e-05 6.05065e-05 2.91551e-05"/>
-          <joint name="r_hip_roll" pos="0 0 0" axis="-1 0 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.02"/>
+          <joint name="r_hip_roll" pos="0 0 0" axis="-1 0 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="1.5"/>
           <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_roll_link"/>
           <body name="r_hip_pitch_link" pos="0.0190366 -0.02 0">
             <inertial pos="0.0135944 0.0193812 -0.0727054" quat="0.738938 0.0427036 0.0407745 0.671181" mass="0.1065" diaginertia="0.000112942 0.000111046 4.06518e-05"/>
-            <joint name="r_hip_pitch" pos="0 0 0" axis="0 -1 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="0.02"/>
+            <joint name="r_hip_pitch" pos="0 0 0" axis="0 -1 0" range="-2.09 2.09" actuatorfrcrange="-6 6" damping="1.5"/>
             <geom type="mesh" contype="0" conaffinity="0" rgba="0.1 0.1 0.1 1" mesh="r_hip_pitch_link"/>
             <body name="r_knee_link" pos="-0.000372039 5e-05 -0.0968862">
               <geom name="r_shin_col" type="capsule" fromto="0 0 0  0 0 -0.09" size="0.018" rgba="0 0 0 0"/>
@@ -277,7 +277,7 @@
   <equality>
     <!-- link7 welded to r_gripper_link (wrist / hand base); identity relpose at compile pose. -->
     <weld name="xarm_wrist" body1="link7" body2="r_gripper_link" relpose="0 0 0 1 0 0 0"
-      solref="0.02 1" solimp="0.99 0.999 0.0001 0.5 2"/>
+      solref="0.001 1" solimp="0.9999 0.99999 1e-5 0.9 2"/>
   </equality>
 
 </mujoco>

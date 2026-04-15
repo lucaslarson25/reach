@@ -76,7 +76,7 @@ def main() -> None:
             "that QoS message is harmless.",
         )
 
-    print("hip/run_demo: limp Ainex + xArm from right hip, wrist welded to r_gripper_link.")
+    print("hip/run_demo: xArm base on torso (hip-pocket pose); wrist weld link7 ↔ r_gripper_link.")
     print("Ball respawns every 4 s. Close window to exit.")
 
     last_spawn = time.time()
