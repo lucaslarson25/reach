@@ -47,7 +47,9 @@ class HipReachEnv(gym.Env):
     Reward (each step, roughly): dense distance ``-dist``, progress ``+progress_coef * Δdist``,
     inverse-distance pull ``+inverse_dist_coef / (dist + eps)``, smoothness
     ``-action_smooth_coef * ||a-a_prev||^2``, magnitude ``-action_mag_coef * ||a||^2``,
-    optional success bonus, minus clearance penalty when the arm crowds the humanoid arm.
+    optional success bonus, minus clearance penalty when the arm crowds the humanoid arm,
+    minus **under-support** penalty when xArm links sit **above** the humanoid arm chain
+    (world +Z) instead of staying **under** it for a lift-from-below assistive posture.
     """
 
     metadata = {"render_modes": ["human"], "render_fps": 60}
@@ -69,6 +71,11 @@ class HipReachEnv(gym.Env):
         torso_clearance_soft_m: float = 0.11,
         torso_clearance_hard_m: float = 0.055,
         torso_violation_penalty: float = 8.0,
+        under_support_penalty: float = 14.0,
+        # link3/4 COM world z must stay below r_el_pitch z by at least this (m).
+        under_z_link34_below_elbow_m: float = 0.026,
+        # link5 COM world z must stay below max(right-arm chain z) by at least this (m).
+        under_z_link5_below_chain_m: float = 0.005,
     ):
         super().__init__()
         self.render_mode = render_mode
@@ -82,6 +89,9 @@ class HipReachEnv(gym.Env):
         self._inv_dist_eps = float(inverse_dist_eps)
         self._smooth_coef = float(action_smooth_coef)
         self._mag_coef = float(action_mag_coef)
+        self._under_pen = float(under_support_penalty)
+        self._under_el34_m = float(under_z_link34_below_elbow_m)
+        self._under_l5_m = float(under_z_link5_below_chain_m)
         self.ball_low = np.array(ball_xyz_low, dtype=np.float64)
         self.ball_high = np.array(ball_xyz_high, dtype=np.float64)
         path = model_path or _model_path()
@@ -116,6 +126,16 @@ class HipReachEnv(gym.Env):
             int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, nm))
             for nm in ("link3", "link4", "link5", "link6")
         )
+        self._humanoid_height_bids = tuple(
+            int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, nm))
+            for nm in ("r_sho_roll_link", "r_el_pitch_link", "r_el_yaw_link", "r_gripper_link")
+        )
+        self._bid_el_pitch = int(
+            mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "r_el_pitch_link")
+        )
+        self._bid_l3 = int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "link3"))
+        self._bid_l4 = int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "link4"))
+        self._bid_l5 = int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "link5"))
 
     def freeze_ball_velocity(self) -> None:
         self.data.qvel[self._ball_dofadr : self._ball_dofadr + 6] = 0.0
@@ -123,6 +143,30 @@ class HipReachEnv(gym.Env):
     def _xarm_ctrl_home(self) -> np.ndarray:
         xhome = np.array([0.0, -0.247, 0.0, 0.909, 0.0, 1.15644, 0.0], dtype=np.float64)
         return np.clip(xhome, self._ctrl_low, self._ctrl_high)
+
+    def _xarm_ctrl_under_home(self) -> np.ndarray:
+        """More flexed pose so mid-links sag under the humanoid arm (assist-from-below)."""
+        q = np.array([0.0, -0.32, -0.18, 0.62, 0.0, 1.02, 0.0], dtype=np.float64)
+        return np.clip(q, self._ctrl_low, self._ctrl_high)
+
+    def _humanoid_arm_top_z(self) -> float:
+        d = self.data
+        return max(float(d.xpos[b][2]) for b in self._humanoid_height_bids)
+
+    def _under_support_sq_violation(self) -> float:
+        """Squared violation (m^2) if link3/4/5 are too high relative to humanoid arm +Z."""
+        d = self.data
+        z_el = float(d.xpos[self._bid_el_pitch][2])
+        z_top = self._humanoid_arm_top_z()
+        viol = 0.0
+        cap34 = z_el - self._under_el34_m
+        for bid in (self._bid_l3, self._bid_l4):
+            z = float(d.xpos[bid][2])
+            viol += max(0.0, z - cap34) ** 2
+        cap5 = z_top - self._under_l5_m
+        z5 = float(d.xpos[self._bid_l5][2])
+        viol += max(0.0, z5 - cap5) ** 2
+        return viol
 
     def _arm_humanoid_min_dist(self) -> float:
         """Min COM distance (m) between mid-xArm links and right humanoid arm (not torso COM)."""
@@ -136,16 +180,21 @@ class HipReachEnv(gym.Env):
         return best
 
     def safeguard_ctrl(self, ctrl: np.ndarray) -> np.ndarray:
-        """Blend ctrl toward a safe home pose when mid-arm links are close to the humanoid arm."""
+        """Blend ctrl for humanoid clearance and for staying *under* the arm in +Z (assist posture)."""
         mujoco.mj_forward(self.model, self.data)
+        ctrl = np.clip(ctrl, self._ctrl_low, self._ctrl_high)
         c = self._arm_humanoid_min_dist()
-        if c >= self._clear_soft:
-            return np.clip(ctrl, self._ctrl_low, self._ctrl_high)
-        span = max(self._clear_soft - self._clear_hard, 1e-6)
-        t = np.clip((c - self._clear_hard) / span, 0.0, 1.0)
-        home = self._xarm_ctrl_home()
-        out = t * np.clip(ctrl, self._ctrl_low, self._ctrl_high) + (1.0 - t) * home
-        return np.clip(out, self._ctrl_low, self._ctrl_high)
+        if c < self._clear_soft:
+            span = max(self._clear_soft - self._clear_hard, 1e-6)
+            t = np.clip((c - self._clear_hard) / span, 0.0, 1.0)
+            home = self._xarm_ctrl_home()
+            ctrl = t * ctrl + (1.0 - t) * home
+        vu = self._under_support_sq_violation()
+        if vu > 1e-8:
+            t_bad = min(1.0, float(np.sqrt(vu)) * 22.0)
+            uhome = self._xarm_ctrl_under_home()
+            ctrl = (1.0 - t_bad) * ctrl + t_bad * uhome
+        return np.clip(ctrl, self._ctrl_low, self._ctrl_high)
 
     def _get_obs(self) -> np.ndarray:
         mujoco.mj_forward(self.model, self.data)
@@ -248,6 +297,9 @@ class HipReachEnv(gym.Env):
         c_h = self._arm_humanoid_min_dist()
         if c_h < self._clear_soft:
             reward -= self._torso_penalty * float(self._clear_soft - c_h)
+        vu_u = self._under_support_sq_violation()
+        if vu_u > 0.0:
+            reward -= self._under_pen * vu_u
         terminated = bool(dist < 0.05)
         if terminated and self._success_bonus != 0.0:
             reward += self._success_bonus
