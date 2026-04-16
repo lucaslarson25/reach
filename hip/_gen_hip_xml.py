@@ -2,9 +2,10 @@
 """Generate hip/models/hip_reach.xml (run from repo root or hip/).
 
 Scales the embedded xArm7 so its span is closer to the Ainex humanoid arm.
-The xArm ``link_base`` is parented to ``torso`` at the right-hip pocket offset so leg
-DOFs do not twist under arm wrenches; ``link7`` is welded to ``r_gripper_link`` with a
-stiff equality constraint.
+The xArm ``link_base`` is parented to ``torso`` at the right-hip pocket (with optional
+outboard Y shift). ``link7`` is welded to ``r_gripper_link`` with a stiff equality;
+``WELD_RELPOS_QUAT`` / ``XARM_TORSO_POCKET_EXTRA_Y`` / base post-π-X tune thumb vs ulnar
+clearance and humanoid ROM.
 
 Tweak XARM_LENGTH_SCALE (0–1, vs full-size menagerie arm) if the weld or reach misbehaves.
 """
@@ -29,11 +30,13 @@ GRIPPER_TIP_POS = "0.018 -0.088 0.016"
 GRIPPER_TIP_SIZE = "0.006"
 # Weld xArm flange to hand base (wrist side) instead of mid-forearm (r_el_yaw_link).
 XARM_WELD_BODY2 = "r_gripper_link"
-# link7 pose in r_gripper_link frame (pos m, quat w x y z). Pure ±Y offsets were still the wrong
-# lateral for this mesh; π about local Z swaps the two sides of the hand in the palm plane.
-# Small +Z keeps the flange off the palm; tune Z if the arm clips the mesh.
-WELD_RELPOS_POS = "0 0 0.006"
-WELD_RELPOS_QUAT = "0 0 0 1"
+# link7 in r_gripper_link frame (pos m, quat w x y z). π about local X swaps thumb vs ulnar side in
+# the plane normal to the gripper hinge (Ainex r_gripper axis is X).
+WELD_RELPOS_POS = "0 0 0"
+WELD_RELPOS_QUAT = "0 1 0 0"
+# Torso pocket: more negative Y moves mount further outboard on the robot's right so the arm
+# does not sit in the humanoid elbow / upper-arm workspace.
+XARM_TORSO_POCKET_EXTRA_Y = -0.034
 # Stiff equality so link7 and hand do not visibly separate (soft solref looks "detached").
 WELD_SOLREF = "0.001 1"
 WELD_SOLIMP = "0.9999 0.99999 1e-5 0.9 2"
@@ -48,6 +51,34 @@ AINEX_R_HIP_YAW_POS_Y = -0.029
 def _f(x: float) -> str:
     s = f"{x:.8g}"
     return s.replace("e-0", "e-").replace("e+0", "e+")
+
+
+def _quat_mul_wxyz(
+    a: tuple[float, float, float, float], b: tuple[float, float, float, float]
+) -> tuple[float, float, float, float]:
+    aw, ax, ay, az = a
+    bw, bx, by, bz = b
+    return (
+        aw * bw - ax * bx - ay * by - az * bz,
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+    )
+
+
+def _quat_norm_wxyz(q: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+    n = (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]) ** 0.5
+    if n < 1e-12:
+        return (1.0, 0.0, 0.0, 0.0)
+    return (q[0] / n, q[1] / n, q[2] / n, q[3] / n)
+
+
+def _xarm_base_quat_string() -> str:
+    """Menagerie pocket quat post-multiplied by π about base-local X (other approach side)."""
+    q0 = (0.6532815, 0.2705981, -0.6532815, 0.2705981)
+    qx = (0.0, 1.0, 0.0, 0.0)
+    q = _quat_norm_wxyz(_quat_mul_wxyz(q0, qx))
+    return f"{_f(q[0])} {_f(q[1])} {_f(q[2])} {_f(q[3])}"
 
 
 def build_xarm_assets(s: float) -> str:
@@ -106,7 +137,7 @@ def build_xarm_defaults(s: float) -> str:
     </default>"""
 
 
-def build_xarm_subtree(s: float, base_pos: tuple[float, float, float]) -> str:
+def build_xarm_subtree(s: float, base_pos: tuple[float, float, float], base_quat_wxyz: str) -> str:
     s3, s5 = s**3, s**5
 
     bx, by, bz = base_pos
@@ -128,7 +159,7 @@ def build_xarm_subtree(s: float, base_pos: tuple[float, float, float]) -> str:
     x7, z7 = 0.076 * s, 0.097 * s
 
     return f"""
-            <body name="link_base" pos="{_f(bx)} {_f(by)} {_f(bz)}" quat="0.6532815 0.2705981 -0.6532815 0.2705981" childclass="xarm7">
+            <body name="link_base" pos="{_f(bx)} {_f(by)} {_f(bz)}" quat="{base_quat_wxyz}" childclass="xarm7">
 {block_inertial((-0.021131, -0.0016302, 0.056488), "0.696843 0.20176 0.10388 0.680376", 0.88556, (0.00382023, 0.00335282, 0.00167725))}
               <geom mesh="link_base"/>
               <body name="link1" pos="0 0 {_f(z1)}">
@@ -175,8 +206,8 @@ def main() -> None:
     s = XARM_LENGTH_SCALE
     # Pocket offset was tuned as child of r_hip_yaw; parent on torso = hip offset + same local offset.
     mbx, mby, mbz = 0.0, -0.055 * s, 0.01 * s
-    base_torso = (mbx, AINEX_R_HIP_YAW_POS_Y + mby, mbz)
-    xarm_subtree = build_xarm_subtree(s, base_torso)
+    base_torso = (mbx, AINEX_R_HIP_YAW_POS_Y + mby + XARM_TORSO_POCKET_EXTRA_Y, mbz)
+    xarm_subtree = build_xarm_subtree(s, base_torso, _xarm_base_quat_string())
     xarm_meshes = build_xarm_assets(s)
     xarm_defaults_inner = build_xarm_defaults(s)
 
@@ -283,7 +314,7 @@ def main() -> None:
 
     eq_block = f"""
   <equality>
-    <!-- link7 welded to {XARM_WELD_BODY2}; relpose shifts flange toward ulnar side of hand. -->
+    <!-- link7 welded to {XARM_WELD_BODY2}; relpose π about hand X swaps thumb vs ulnar side. -->
     <weld name="xarm_wrist" body1="link7" body2="{XARM_WELD_BODY2}"
       relpose="{WELD_RELPOS_POS} {WELD_RELPOS_QUAT}"
       solref="{WELD_SOLREF}" solimp="{WELD_SOLIMP}"/>
