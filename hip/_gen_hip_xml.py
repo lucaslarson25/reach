@@ -118,7 +118,7 @@ def build_xarm_defaults(s: float) -> str:
     kd3 = max(8.0, 80 * s3)
     site = max(0.00035, 0.001 * s)
     return f"""    <default class="xarm7">
-      <geom type="mesh" material="white"/>
+      <geom type="mesh" material="white" contype="0" conaffinity="0"/>
       <joint axis="0 0 1" armature="{_f(arm)}" range="-6.28319 6.28319" frictionloss="{_f(fl)}"/>
       <general biastype="affine" ctrlrange="-6.28319 6.28319"/>
       <default class="size1">
