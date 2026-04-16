@@ -42,7 +42,13 @@ def _free_joint_dofadr(model: mujoco.MjModel) -> int:
 
 
 class HipReachEnv(gym.Env):
-    """Control only the xArm; Ainex is passive (high damping, no actuators)."""
+    """Control only the xArm; Ainex is passive (high damping, no actuators).
+
+    Reward (each step, roughly): dense distance ``-dist``, progress ``+progress_coef * Δdist``,
+    inverse-distance pull ``+inverse_dist_coef / (dist + eps)``, smoothness
+    ``-action_smooth_coef * ||a-a_prev||^2``, magnitude ``-action_mag_coef * ||a||^2``,
+    optional success bonus, minus clearance penalty when the arm crowds the humanoid arm.
+    """
 
     metadata = {"render_modes": ["human"], "render_fps": 60}
 
@@ -51,10 +57,15 @@ class HipReachEnv(gym.Env):
         render_mode: str | None = None,
         model_path: str | None = None,
         max_steps: int = 500,
-        ball_xyz_low: tuple[float, float, float] = (0.22, -0.2, 0.22),
-        ball_xyz_high: tuple[float, float, float] = (0.48, 0.2, 0.55),
+        # Ball mostly in front of the torso (world +X); narrow Y/Z for the assistive reach task.
+        ball_xyz_low: tuple[float, float, float] = (0.28, -0.12, 0.28),
+        ball_xyz_high: tuple[float, float, float] = (0.52, 0.12, 0.50),
         success_bonus: float = 0.0,
         progress_coef: float = 2.0,
+        inverse_dist_coef: float = 0.15,
+        inverse_dist_eps: float = 0.07,
+        action_smooth_coef: float = 0.04,
+        action_mag_coef: float = 0.012,
         torso_clearance_soft_m: float = 0.11,
         torso_clearance_hard_m: float = 0.055,
         torso_violation_penalty: float = 8.0,
@@ -67,6 +78,10 @@ class HipReachEnv(gym.Env):
         self._clear_soft = float(torso_clearance_soft_m)
         self._clear_hard = float(torso_clearance_hard_m)
         self._torso_penalty = float(torso_violation_penalty)
+        self._inv_dist_coef = float(inverse_dist_coef)
+        self._inv_dist_eps = float(inverse_dist_eps)
+        self._smooth_coef = float(action_smooth_coef)
+        self._mag_coef = float(action_mag_coef)
         self.ball_low = np.array(ball_xyz_low, dtype=np.float64)
         self.ball_high = np.array(ball_xyz_high, dtype=np.float64)
         path = model_path or _model_path()
@@ -92,6 +107,7 @@ class HipReachEnv(gym.Env):
         self._step_count = 0
         self._viewer = None
         self._prev_dist: float = 1.0
+        self._prev_action = np.zeros(7, dtype=np.float64)
         self._humanoid_probe_bids = tuple(
             int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, nm))
             for nm in ("r_sho_roll_link", "r_el_pitch_link", "r_el_yaw_link")
@@ -161,6 +177,7 @@ class HipReachEnv(gym.Env):
         bp = self.data.qpos[self._ball_qadr : self._ball_qadr + 3]
         ee = self.data.site_xpos[self._site_ee]
         self._prev_dist = float(np.linalg.norm(bp - ee))
+        self._prev_action[:] = 0.0
         return obs, {}
 
     def _set_nominal_limp_pose(self) -> None:
@@ -216,7 +233,18 @@ class HipReachEnv(gym.Env):
         dist = float(np.linalg.norm(err))
         progress = self._prev_dist - dist
         self._prev_dist = dist
-        reward = -dist + self._progress_coef * progress
+        inv = self._inv_dist_coef / (dist + self._inv_dist_eps)
+        da = a - self._prev_action
+        smooth_pen = self._smooth_coef * float(np.dot(da, da))
+        mag_pen = self._mag_coef * float(np.dot(a, a))
+        self._prev_action = a.copy()
+        reward = (
+            -dist
+            + self._progress_coef * progress
+            + inv
+            - smooth_pen
+            - mag_pen
+        )
         c_h = self._arm_humanoid_min_dist()
         if c_h < self._clear_soft:
             reward -= self._torso_penalty * float(self._clear_soft - c_h)

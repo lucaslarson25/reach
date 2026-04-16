@@ -22,7 +22,7 @@ XARM_LENGTH_SCALE = 0.37
 # Torso world Z so feet rest near the floor (z=0) with hip.env nominal limp pose.
 TORSO_Z = 0.245
 # Initial ball position (free joint); random resets use env ball box.
-BALL_SPAWN_XYZ = "0.38 0 0.42"
+BALL_SPAWN_XYZ = "0.40 0 0.38"
 # Task site on r_gripper_link (humanoid hand only). +X aligns with r_gripper joint axis and points
 # toward the welded xArm flange — keep X small so the marker stays on the claw, not on the arm.
 # Use mostly -Y toward the open side of the pinch mesh.
