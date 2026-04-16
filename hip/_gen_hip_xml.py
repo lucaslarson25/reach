@@ -29,10 +29,11 @@ GRIPPER_TIP_POS = "0.018 -0.088 0.016"
 GRIPPER_TIP_SIZE = "0.006"
 # Weld xArm flange to hand base (wrist side) instead of mid-forearm (r_el_yaw_link).
 XARM_WELD_BODY2 = "r_gripper_link"
-# link7 pose in r_gripper_link frame (pos m, quat w x y z). For Ainex +Y was the wrong lateral
-# side; use negative Y / positive Z to sit the flange on the ulnar (pinky) side of the right hand.
-WELD_RELPOS_POS = "0.01 -0.034 0.012"
-WELD_RELPOS_QUAT = "1 0 0 0"
+# link7 pose in r_gripper_link frame (pos m, quat w x y z). Pure ±Y offsets were still the wrong
+# lateral for this mesh; π about local Z swaps the two sides of the hand in the palm plane.
+# Small +Z keeps the flange off the palm; tune Z if the arm clips the mesh.
+WELD_RELPOS_POS = "0 0 0.006"
+WELD_RELPOS_QUAT = "0 0 0 1"
 # Stiff equality so link7 and hand do not visibly separate (soft solref looks "detached").
 WELD_SOLREF = "0.001 1"
 WELD_SOLIMP = "0.9999 0.99999 1e-5 0.9 2"

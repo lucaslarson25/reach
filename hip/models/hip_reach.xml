@@ -277,7 +277,7 @@
   <equality>
     <!-- link7 welded to r_gripper_link; relpose shifts flange toward ulnar side of hand. -->
     <weld name="xarm_wrist" body1="link7" body2="r_gripper_link"
-      relpose="0.01 -0.034 0.012 1 0 0 0"
+      relpose="0 0 0.006 0 0 0 1"
       solref="0.001 1" solimp="0.9999 0.99999 1e-5 0.9 2"/>
   </equality>
 
