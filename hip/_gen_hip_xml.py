@@ -29,6 +29,10 @@ GRIPPER_TIP_POS = "0.018 -0.088 0.016"
 GRIPPER_TIP_SIZE = "0.006"
 # Weld xArm flange to hand base (wrist side) instead of mid-forearm (r_el_yaw_link).
 XARM_WELD_BODY2 = "r_gripper_link"
+# link7 pose in r_gripper_link frame (pos m, quat w x y z). Nudge pos so the xArm bulk sits
+# more ulnar ("pinky" side) on the right hand; flip Y/Z signs if it appears on the wrong side.
+WELD_RELPOS_POS = "0.012 0.026 -0.004"
+WELD_RELPOS_QUAT = "1 0 0 0"
 # Stiff equality so link7 and hand do not visibly separate (soft solref looks "detached").
 WELD_SOLREF = "0.001 1"
 WELD_SOLIMP = "0.9999 0.99999 1e-5 0.9 2"
@@ -278,8 +282,9 @@ def main() -> None:
 
     eq_block = f"""
   <equality>
-    <!-- link7 welded to {XARM_WELD_BODY2} (wrist / hand base); identity relpose at compile pose. -->
-    <weld name="xarm_wrist" body1="link7" body2="{XARM_WELD_BODY2}" relpose="0 0 0 1 0 0 0"
+    <!-- link7 welded to {XARM_WELD_BODY2}; relpose shifts flange toward ulnar side of hand. -->
+    <weld name="xarm_wrist" body1="link7" body2="{XARM_WELD_BODY2}"
+      relpose="{WELD_RELPOS_POS} {WELD_RELPOS_QUAT}"
       solref="{WELD_SOLREF}" solimp="{WELD_SOLIMP}"/>
   </equality>
 """
