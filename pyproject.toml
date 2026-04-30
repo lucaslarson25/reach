@@ -13,7 +13,7 @@ authors = [
   { name = "REACH Capstone Team" },
 ]
 dependencies = [
-  "numpy==1.26.4",
+  "numpy>=2.0,<3",
   "gymnasium>=0.29,<1.0",
   "stable-baselines3==2.3.2",
   "mujoco==3.2.0",
@@ -34,6 +34,8 @@ dependencies = [
 ]
 
 [project.scripts]
+train = "config.arm_cli:train_main"
+run = "config.arm_cli:run_main"
 reach-train = "scenes.industrial_arm_reaching.training.arm_train:main"
 reach-eval = "eval_model:main"
 reach-render-demo = "renders.render_demo:main"

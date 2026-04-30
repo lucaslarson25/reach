@@ -1,0 +1,27 @@
+# Per-arm overrides for robust training across different robot geometries.
+# Add entries for arms that need special handling. Unlisted arms use arms.yaml defaults.
+# See documentation/adding_new_arm.md for a guide.
+
+# Ur5e: erratic behavior (circles, close-then-far) -> tighter ball band
+ur5e:
+  reach_max_cap: 0.5
+  reach_min_mode: registry
+
+# ALOHA: bimanual arms start "connected" -> randomize initial pose so they spread
+aloha:
+  initial_pose: random
+  ball_mode: per_arm   # each arm has its own ball, less conflict
+  reach_max_cap: 0.5
+
+# Z1: folds into itself -> penalize joints near limits to avoid self-collision
+z1:
+  joint_limit_margin_penalty: 0.02   # penalize when within 10% of joint limits
+  reach_max_cap: 0.55
+  # Or use industrial scene (proven): set model_path in arms.yaml for z1
+
+# Example for a custom arm a user uploads:
+# my_arm:
+#   reach_min_mode: registry
+#   reach_max_cap: 0.5
+#   initial_pose: random
+#   joint_limit_margin_penalty: 0.015

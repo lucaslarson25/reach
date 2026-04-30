@@ -1,45 +1,135 @@
-# Arms reach: train and run PPO for arm-only ball reach.
-# Use: arm_train_mac --config config/arms.yaml
-#      run_simulation --config config/arms.yaml
-# Paths are relative to repo root. Env vars (ARM_ID, TOTAL_STEPS) override YAML.
+# =============================================================================
+# Arm reach — PPO training and viewer replay (single YAML for both)
+# =============================================================================
+# Used by:  train / run  (after pip install -e .)
+#           python scripts/train.py    python scripts/run.py
+#           python -m scenes.arms.training.arm_train_mac
+#           mjpython -m scenes.arms.training.run_simulation   (macOS viewer)
+#
+# Paths below are relative to the repository root unless you use an absolute path.
+#
+# Overrides (optional):
+#   - Environment variables (highest priority for those keys): ARM_ID, TOTAL_STEPS,
+#     MODEL_PATH, USE_MPS (set to 1/true/yes to allow MPS when device is null).
+#   - CLI flags on train/run scripts (see --help).
+#   - config/arm_overrides.yaml — per-arm keys merged for the active arm_id
+#     (see README "Optional: Per-arm overrides").
+#
+# Top-level blocks:
+#   scene  — which robot, optional custom MJCF path, ball layout, spawn pose
+#   train  — timesteps, reward shaping, reach curriculum, PPO hyperparameters, save dir
+#   run    — which policy zip to load for replay, viewer length, deterministic vs stochastic
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# scene — What environment is built (robot + ball + floor composition)
+# -----------------------------------------------------------------------------
 scene:
+  # Registered id (see scenes/arms/arm_registry.py) or folder name under
+  # scenes/arms/models/arms/<arm_id>/ when using auto-discovery (arm.xml, <arm_id>.xml, scene.xml).
   arm_id: panda
-  # For Z1: set model_path: "scenes/industrial_arm_reaching/models/z1scene.xml" to use proven industrial scene
-  model_path: null   # optional; null = use composed scene from registry
-  ball_mode: shared   # "shared" = 1 ball, all arms reach; "per_arm" = N balls for N arms
-  per_arm_policies: false  # true = train/run separate policy per arm (multi-arm only)
 
+  # If set: load this MJCF/XML directly (repo-relative or absolute). If null: build the reach
+  # scene by composing the arm from the registry/discovery with floor + target ball(s).
+  # Example (legacy industrial Z1 scene): "scenes/industrial_arm_reaching/models/z1scene.xml"
+  model_path: null
+
+  # How many balls vs end-effectors (EE):
+  #   shared   — one ball; all arms in the model reach it (typical single-arm).
+  #   per_arm  — one ball per arm (e.g. bimanual aloha).
+  ball_mode: shared
+
+  # If true and the arm has multiple EE sites: train/load one policy per arm
+  # (files named ppo_arms_<arm_id>_arm0_mac_<k>k.zip, _arm1_, ...).
+  per_arm_policies: false
+
+  # Optional (often set from arm_overrides.yaml instead):
+  # initial_pose: home | random  — robot reset pose
+  # initial_keyframe: <name>     — MuJoCo keyframe name for reset
+
+# -----------------------------------------------------------------------------
+# train — Learning loop: curriculum, rewards, PPO, where policies are saved
+# -----------------------------------------------------------------------------
 train:
+  # Total PPO environment steps for one training run. Filename uses floor(timesteps/1000),
+  # e.g. 300000 -> ..._300k.zip. Override with CLI --steps or TOTAL_STEPS.
   total_steps: 300000
-  # Match original Z1 industrial training (worked well): reward_style "z1" = no time/jerk/move-away
-  # penalties, 0.05 action penalty, 50/50 ctrl blend, registry reach_min only.
-  reward_style: z1   # "z1" | "arms"
-  # reach_min_mode: "auto" = infer from arm model (samples workspace, uses 10th percentile)
-  #   "registry" = use fraction/floor overrides below
-  reach_min_mode: "auto"
-  reach_min_fraction: null  # when registry mode: min = this * reach_max (e.g. 0.55)
-  reach_min_floor: null     # when registry mode: ball never closer than this (m)
-  # Scale actions so joints closer to EE move more (reduces getting stuck)
-  ee_priority_scale: true
-  ctrl_blend_new: null      # null = 0.5 (z1) or 0.3 (arms). Lower (e.g. 0.4) = smoother motion
-  reward_time_penalty: 0.0005
-  reward_smoothness: 0.02
-  reward_move_away_penalty: 0.5
+
+  # Reward / penalty recipe:
+  #   z1   — industrial-style: lighter shaping (no extra time/jerk/move-away in the same way as "arms").
+  #   arms — fuller dense reward + time / smoothness / move-away terms (see ArmReachEnv).
+  reward_style: z1
+
+  # How the minimum ball distance (along the reach axis) is chosen:
+  #   registry — use reach_min / reach_max from arm registry (or overrides) per arm.
+  #   auto     — infer from the loaded model geometry.
+  reach_min_mode: "registry"
+
+  # When reach_min_mode is registry: optional extra clamping (meters).
+  # reach_min_fraction: if set, min distance = this * reach_max (e.g. 0.55).
+  reach_min_fraction: null
+  # reach_min_floor: if set, ball is never closer than this distance to the base.
+  reach_min_floor: null
+
+  # Upper cap on ball distance (meters). Smaller = easier targets, often higher success rate early.
+  # Z1 industrial-style often ~0.55; single arms may use larger values (e.g. 0.85).
+  reach_max_cap: 0.6
+
+  # If true: scale action magnitudes so joints nearer the end-effector move more (can reduce
+  # "stuck at base" behavior). false = uniform scaling (closer to Z1-style training).
+  ee_priority_scale: false
+
+  # Blend factor between previous controls and new policy output (null = default by reward_style:
+  # ~0.5 for z1, ~0.3 for arms). Lower tends to smoother motion.
+  ctrl_blend_new: null
+
+  # Shaping magnitudes (used when reward_style enables the corresponding terms).
+  reward_time_penalty: 0.0005       # Penalize long episodes (encourages faster reach).
+  reward_smoothness: 0.02           # Penalize jerky actions.
+  reward_move_away_penalty: 0.5     # Penalize moving the EE away from the ball.
+
+  # Directory for saved policies (repo-relative). Zip basename pattern:
+  #   ppo_arms_<arm_id>_mac_<k>k.zip   or per-arm  ..._arm<i>_mac_<k>k.zip
   policy_dir: policies
-  # PPO (optional overrides; defaults used if omitted)
-  n_steps: 2048
-  batch_size: 128
-  n_epochs: 10
-  learning_rate: 0.0003
-  seed: 42
-  device: null       # null = auto (mps on Mac if available else cpu)
+
+  # --- Stable-Baselines3 PPO (see SB3 docs for meanings) ---
+  n_steps: 2048              # Steps per env per rollout before each policy update.
+  batch_size: 64             # Minibatch size drawn from the rollout buffer.
+  n_epochs: 10               # Full passes over the batch per update.
+  learning_rate: 0.0003      # Adam step size.
+  clip_range: 0.2            # PPO trust region (policy ratio clip).
+  gamma: 0.99                # Discount factor for future reward.
+  gae_lambda: 0.95           # Bias/variance tradeoff for advantage (GAE).
+  vf_coef: 0.5               # Weight of value-function loss vs policy loss.
+  ent_coef: 0.01             # Entropy bonus (0 = no exploration pressure from entropy).
+  max_grad_norm: 0.5         # Gradient clipping (L2 norm).
+  seed: 42                   # RNG seed for reproducibility.
+
+  # PyTorch device: null, "cpu", "cuda", "mps", etc. If null: uses CPU unless MPS is explicitly
+  # enabled via use_mps: true below or USE_MPS=1 in the environment (then MPS on Apple Silicon).
+  device: null
+
+  # When true (or USE_MPS=1), and device is null, training uses MPS if available; otherwise CPU.
   use_mps: false
 
+  # Optional (often from arm_overrides.yaml): joint_limit_margin_penalty — penalty near joint limits.
+
+# -----------------------------------------------------------------------------
+# run — Viewer replay of a trained policy (run / run_simulation)
+# -----------------------------------------------------------------------------
 run:
-  # policy_path: set explicitly, or leave null to derive from scene.arm_id + train.total_steps
+  # Explicit path to a .zip policy. If null, path is derived from policy_dir, scene.arm_id,
+  # and train.total_steps (must match the timestep tag in the filename, e.g. _300k_).
   policy_path: null
+
+  # Maximum simulator steps in the viewer before exit (not the same as training timesteps).
   steps: 5000
+
+  # If true: policy mean action (reproducible). If false: still deterministic unless stochastic is true.
   deterministic: true
+
+  # If true: print extra diagnostics (e.g. action norm periodically).
   debug: false
+
+  # If true: sample actions from the policy distribution instead of the mean (overrides deterministic).
   stochastic: false

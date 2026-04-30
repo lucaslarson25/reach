@@ -5,6 +5,9 @@ Run trained arm policy with MuJoCo viewer. YAML-driven.
 Usage (from project root):
   mjpython -m scenes.arms.training.run_simulation --config config/arms.yaml
   mjpython -m scenes.arms.training.run_simulation --config config/arms.yaml --arm-id ur5e
+
+Note: Policy files are pickled with the current environment (e.g. NumPy). Use the same
+NumPy major version for training and running (see requirements.txt).
 """
 import os
 import sys
@@ -17,7 +20,7 @@ sys.path.insert(0, _REPO_ROOT)
 
 
 def main():
-    from config.arms_loader import load_arms_config, resolve_policy_path, resolve_policy_paths
+    from config.arms_loader import load_arms_config, apply_arm_overrides, resolve_policy_paths
     from scenes.arms.arm_registry import get_arm_info
 
     p = argparse.ArgumentParser(
@@ -35,6 +38,7 @@ def main():
 
     cfg = load_arms_config(args.config)
     arm_id = args.arm_id if args.arm_id is not None else cfg["scene"].get("arm_id", "panda")
+    cfg = apply_arm_overrides(cfg, arm_id)
     ball_mode = cfg["scene"].get("ball_mode", "shared")
     per_arm_policies = args.per_arm_policies or cfg["scene"].get("per_arm_policies", False)
     info = get_arm_info(arm_id)
@@ -48,17 +52,55 @@ def main():
     deterministic = not (args.stochastic or cfg["run"].get("stochastic", False))
     debug = args.debug or cfg["run"].get("debug", False)
 
-    # Create env with viewer; do NOT pass to PPO.load so it stays unwrapped and render() works
-    env = ArmReachEnv(arm_id=arm_id, render_mode="human", ball_mode=ball_mode)
+    # Create env with viewer; apply overrides for reach, initial_pose, etc.
+    scene = cfg["scene"]
+    train = cfg["train"]
+    env_kw = dict(arm_id=arm_id, render_mode="human", ball_mode=ball_mode)
+    if scene.get("initial_pose"):
+        env_kw["initial_pose"] = scene["initial_pose"]
+    if scene.get("initial_keyframe"):
+        env_kw["initial_keyframe"] = scene["initial_keyframe"]
+    if train.get("joint_limit_margin_penalty") is not None:
+        env_kw["joint_limit_margin_penalty"] = train["joint_limit_margin_penalty"]
+    if train.get("reach_max_cap") is not None:
+        env_kw["reach_max"] = train["reach_max_cap"]
+    if train.get("reach_min_mode"):
+        env_kw["reach_min_mode"] = train["reach_min_mode"]
+    if train.get("reach_min_fraction") is not None:
+        env_kw["reach_min_fraction"] = train["reach_min_fraction"]
+    if train.get("reach_min_floor") is not None:
+        env_kw["reach_min_floor"] = train["reach_min_floor"]
+    env = ArmReachEnv(**env_kw)
+
+    # Resolve and validate policy path(s)
+    if args.model is not None:
+        load_path = args.model if os.path.isabs(args.model) else os.path.join(_REPO_ROOT, args.model)
+    else:
+        load_path = policy_paths[0] if isinstance(policy_paths, list) else policy_paths
+    if not os.path.isfile(load_path):
+        print("ERROR: Policy file not found:", load_path)
+        print("Train first: python scripts/train.py --arm-id", arm_id)
+        return
+    def _load_model(path):
+        try:
+            return PPO.load(path)
+        except ModuleNotFoundError as e:
+            if "numpy._core" in str(e) or "numpy.core" in str(e):
+                print("ERROR: Policy was saved with a different NumPy version. Use the same NumPy major version for train and run.")
+                print("  Current: pip show numpy. Fix: pip install 'numpy>=2.0,<3' (or match the env that trained the policy).")
+            raise
 
     if per_arm_policies and n_arms > 1 and isinstance(policy_paths, list):
-        models = [PPO.load(p) for p in policy_paths]
+        to_load = [p for p in policy_paths if os.path.isfile(p)]
+        if len(to_load) != n_arms:
+            print("ERROR: Expected", n_arms, "policy files (per_arm_policies). Found:", to_load)
+            return
+        models = [_load_model(p) for p in to_load]
         act_groups = info.get("actuator_groups") or [list(range(env.model.nu))]
         if len(act_groups) != n_arms:
             act_groups = [list(range(env.model.nu))]
     else:
-        model_path = policy_paths[0] if isinstance(policy_paths, list) else policy_paths
-        models = [PPO.load(model_path)]
+        models = [_load_model(load_path)]
         act_groups = [list(range(env.model.nu))]
 
     # Ensure policy obs shape matches env

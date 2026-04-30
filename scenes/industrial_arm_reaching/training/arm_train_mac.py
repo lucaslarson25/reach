@@ -35,7 +35,7 @@ class TerminationRatioCallback(BaseCallback):
                     self.total_episodes += 1
                     if isinstance(info, dict) and info.get("terminated", False):
                         self.terminated_episodes += 1
-        elif isinstance(dones, (bool, np.bool_)):
+        elif isinstance(dones, (bool, getattr(np, "bool_", bool))):
             if dones:
                 self.total_episodes += 1
                 if isinstance(infos, dict) and infos.get("terminated", False):
