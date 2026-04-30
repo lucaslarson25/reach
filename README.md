@@ -770,44 +770,138 @@ run panda   # or mjpython scripts/run.py --arm-id panda
 ## macOS (M-Series) Instructions
 
 ### Arm reach (train + run)
+REACH is a Northern Arizona University capstone project for robotics
+simulation, reinforcement learning, rendering, gesture recognition, and AINex
+humanoid experimentation. The project combines MuJoCo physics, Gymnasium
+environments, Stable-Baselines3 PPO policies, MediaPipe/PyTorch gesture tools,
+AINex action-group assets, a static project website, and Monsoon HPC scripts.
+
+For installation instructions, see [SETUP.md](SETUP.md). For commands and
+workflows, see [USAGE.md](USAGE.md).
+
+## Current Main Workflows
+
+- Train and run YAML-driven arm-only reaching policies for many MuJoCo
+  Menagerie arms through `scripts/train.py` and `scripts/run.py`.
+- Render legacy trained PPO policies through config-driven render scripts in
+  `renders/`.
+- Train and evaluate AINex standing, reaching, and walk-to-ball tasks.
+- Replay AINex hardware action groups from CSV files in MuJoCo.
+- Run two gesture-recognition paths:
+  - the project gesture-classifier pipeline under `scenes/image_recognition/`;
+  - the MediaPipe `.task` webcam runners under `gesture_recognition/`.
+- Run smoke tests locally or on NAU Monsoon.
+- Serve or open the static website in `website/`.
+
+## Repository Layout
+
+```text
+reach/
+|-- README.md
+|-- SETUP.md
+|-- USAGE.md
+|-- requirements.txt
+|-- requirements-hpc.txt
+|-- pyproject.toml
+|-- eval_model.py
+|-- assets/
+|   |-- ainex/
+|   `-- action_groups/
+|-- cluster/
+|   |-- test_monsoon.sh
+|   |-- train_monsoon.sh
+|   |-- train_arms_monsoon.sh
+|   `-- run_arms_background.sh
+|-- config/
+|   |-- arms.yaml
+|   |-- arms_loader.py
+|   |-- render_run.yaml
+|   |-- ainex_render.yaml
+|   |-- ainex_reach.yaml
+|   |-- ainex_walk_to_ball.yaml
+|   `-- render_loader.py
+|-- documentation/
+|   |-- system_design.md
+|   |-- monsoon_setup.md
+|   |-- installer_plan.md
+|   |-- demos/
+|   |-- headshots/
+|   |-- logos/
+|   `-- *.pdf / *.docx / *.pptx
+|-- gesture_recognition/
+|-- renders/
+|-- scenes/
+|   |-- arms/
+|   |-- ainex_soccer/
+|   |-- industrial_arm_reaching/
+|   |-- industrial_arm_reaching_with_welding/
+|   |-- image_recognition/
+|   |-- cartpole/
+|   |-- humanoid/
+|   `-- legs/
+|-- scripts/
+|-- tests/
+|-- tools/
+|-- website/
+`-- logs/
+```
+
+## Primary Arm Reach System
+
+The primary workflow is `scenes/arms/`, a YAML-driven arm reach environment.
+Only the arm XML is supplied; `scenes/arms/scene_compose.py` composes the arm
+with a floor and target ball at runtime.
+
+Default commands:
 
 ```bash
 python scripts/train.py --arm-id panda
 mjpython scripts/run.py --arm-id panda
 ```
 
-### Render a trained PPO policy (legacy)
+`config/arms.yaml` controls the default arm, ball mode, PPO settings, reward
+style, policy directory, and run settings. CLI flags and environment variables
+override the YAML. Policies are saved by default to:
 
-```bash
-.venv/bin/mjpython renders/render_demo_mac.py --config config/render_run.yaml
+```text
+policies/ppo_arms_<arm_id>_mac_<steps_in_k>k.zip
 ```
 
-### View a model interactively
+Registered or discoverable arms include `arm_2link`, `panda`, `fr3`, `ur5e`,
+`ur10e`, `iiwa14`, `xarm7`, `sawyer`, `lite6`, `vx300s`, `wx250s`, `aloha`,
+`unitree_z1`, and `z1`.
+
+## AINex Assets and Action Groups
+
+The repository includes AINex humanoid assets synced from the AINex Soccer
+project:
+
+- `assets/ainex/`: MJCF/URDF files and robot meshes.
+- `assets/action_groups/raw/`: original `.d6a` action groups.
+- `assets/action_groups/csv/`: exported servo/timing CSV action groups.
+- `tools/`: viewers, action-group replay, sequence playback, and converters.
+- `scenes/ainex_soccer/`: Gymnasium environments, training scripts, and PPO
+  policies.
+
+Useful commands:
 
 ```bash
-.venv/bin/mjpython renders/render_model_mac.py --config config/render_run.yaml
+mjpython tools/view_ainex_stable.py
+mjpython tools/replay_actiongroup.py assets/action_groups/csv/wave.csv
+mjpython tools/run_sequence.py
 ```
 
-> **Note:** macOS requires **mjpython** to open MuJoCo's passive viewer using Metal graphics. For arm reach, use `scripts/run.py`; for legacy scenes, the YAML file defines which model and policy are rendered.
+## Legacy and Supporting Systems
 
----
-
-## Windows / Linux (x86 / CUDA) Instructions
-
-### Arm reach (train + run)
-
-```bash
-python scripts/train.py --arm-id panda
-python scripts/run.py --arm-id panda
-```
-
-### Render a trained PPO policy (legacy)
-
-```bash
-.venv\Scripts\python.exe renders\render_demo.py --config config\render_run.yaml
-```
-
-### View a model interactively
+- `renders/` contains config-driven renderers for trained PPO policies and
+  MuJoCo model inspection.
+- `scenes/industrial_arm_reaching/` contains the older Z1 reaching workflow.
+- `scenes/image_recognition/` contains a MediaPipe keypoint collection,
+  PyTorch classifier training, inference, and gesture-controlled robot demo.
+- `gesture_recognition/` contains direct MediaPipe Gesture Recognizer `.task`
+  webcam runners and AINex/ROS-oriented trigger scripts.
+- `cluster/` and `documentation/monsoon_setup.md` document NAU Monsoon training.
+- `tests/smoke_test.py` provides a quick headless setup sanity check.
 
 ```bash
 .venv\Scripts\python.exe renders\render_model.py --config config\render_run.yaml
@@ -864,69 +958,21 @@ Set your Python path manually:
 ```bash
 export PYTHONPATH=$(pwd)
 ```
+## Team
 
-### `RuntimeError: launch_passive requires mjpython`
+- Taylor Davis: team lead, coding, architecture, integration.
+- Victor Rodriguez: coding, recording, documentation, model development.
+- Clayton Ramsey: coding, architecture, environment structure, testing.
+- Lucas Larson: coding, version control management, repository operations.
 
-Use `mjpython` instead of `python` on macOS:
+## Sponsors
 
-```bash
-.venv/bin/mjpython renders/render_demo_mac.py --config config/render_run.yaml
-```
-
-### Policy not found
-
-- **Arm reach:** Policies are in `policies/ppo_arms_<arm_id>_mac_<k>k.zip`. Ensure you pass `--arm-id` matching the trained arm, or use `--model <path>` to specify the policy.
-- **Other scenes:** Policies may be in `scenes/<scene_name>/policies/<policy_name>.zip`.
-
-### Viewer closes instantly
-
-Check your model XML path in `config/render_run.yaml`—MuJoCo closes the window immediately if the model fails to load.
-
-### Arm does not move in viewer
-
-Pass `--debug` to print action norms. If norm is ~0, retrain with more steps (`--steps 500000`) or try `--stochastic` when running.
-
----
-
-## Branching Strategy
-
-- **`dev`** – Integration branch. Feature branches (ainex, vdev, tdev, etc.) merge here to iron out bugs before going to main.
-- **`main`** – Production-ready code only. Merge from `dev` when fully tested and functional.
-
-**Flow:** feature branch → `dev` (test, fix) → `main`
-
----
-
-## Collaboration
-
-- **Mentor Meetings:** Thursdays, 4:30–5:30 PM
-- **Sponsor Meetings:** Biweekly Tuesdays, 2:00–3:30 PM
-- **Capstone Lectures:** Fridays, 12:45–3:15 PM
-
-**Tools:**
-
-- GitHub Projects & Issues for task tracking
-- Google Docs and Markdown for documentation
-- Lucidchart for diagrams
-- Pull requests and feature branches for version control
-
----
-
-## Coding & Documentation Standards
-
-- Follows **PEP8** Python style guidelines
-- Code is modular, well-commented, and reproducible
-- Technical docs use Markdown (`.md`); presentations use PowerPoint or Google Slides
-- All diagrams and charts use clear labels and consistent formatting
-
----
+- Dr. Zach Lerner, Ph.D., Associate Professor, Mechanical Engineering, NAU.
+- Prof. Carlo R. da Cunha, Ph.D., Assistant Professor, Electrical Engineering,
+  NAU.
 
 ## License
 
-This project was developed for academic purposes as part of the **NAU Computer Science Capstone Program (2024–2025)**.
-All rights reserved by the REACH development team and **Northern Arizona University**.
-
----
-
-**REACH Capstone Project**
-_Northern Arizona University – Computer Science Department (2024–2025)_
+This project was developed for academic purposes as part of the NAU Computer
+Science Capstone Program. All rights reserved by the REACH development team and
+Northern Arizona University.
